@@ -40,7 +40,7 @@ class VehicleEntryController extends Controller
             'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
             'brand' => 'nullable|string|max:50',
             'model' => 'nullable|string|max:50',
-            'color' => 'nullable|string|max:30'
+            'color' => 'nullable|string|max:30',
         ]);
 
         try {
@@ -80,14 +80,26 @@ class VehicleEntryController extends Controller
                         'success' => false,
                         'message' => 'No hay espacios disponibles para este tipo de vehículo'
                     ], 400);
+                    
                 }
+
+                $casco = $request->has('casco');
+$chaleco = $request->has('chaleco');
+$llaves = $request->has('llaves');
+$otro = $request->has('otro');
+$otro_texto = $otro ? $request->input('otro_texto') : null;
 
                 // Crear entrada
                 $entry = VehicleEntry::create([
-                    'vehicle_id' => $vehicle->id,
-                    'espacio_id' => $espacio->id,
-                    'entry_time' => Carbon::now(),
-                    'ticket_code' => (string) Str::uuid(),
+                     'vehicle_id' => $vehicle->id,
+    'espacio_id' => $espacio->id,
+    'entry_time' => Carbon::now(),
+    'ticket_code' => (string) Str::uuid(),
+    'casco' => $casco,
+    'chaleco' => $chaleco,
+    'llaves' => $llaves,
+    'otro' => $otro,
+    'otro_texto' => $otro_texto,
                 ]);
 
                 if (!$entry) {
@@ -95,19 +107,38 @@ class VehicleEntryController extends Controller
                 }
 
                 // Generar QR
-                $qr = base64_encode(QrCode::format('png')->size(150)->generate($entry->ticket_code));
-                $ticketHtml = view('parking.ticket', ['entrada' => $entry, 'qr' => $qr])->render();
+                // Preparar datos para el QR
+                $plateFormatted = preg_replace('/^([A-Za-z]+)(\d+)$/', '$1-$2', $vehicle->plate);
 
-                return response()->json([
+$qrData  = "Placa: {$plateFormatted}\n";
+$qrData .= "Tipo: {$vehicle->tipoVehiculo->nombre}\n";
+$qrData .= "Marca/Modelo: " . ($vehicle->brand ?? 'N/A') . " " . ($vehicle->model ?? 'N/A') . "\n";
+$qrData .= "Fecha - Hora Entrada: " . $entry->created_at->format('Y-m-d H:i:s');
+
+// Generar QR con la información combinada
+$qr = base64_encode(
+    QrCode::format('png')
+        ->size(150)
+        ->generate($qrData)
+);
+
+// Renderizar ticket
+$ticketHtml = view('parking.ticket', [
+    'entrada' => $entry,
+    'qr' => $qr
+])->render();
+
+return response()->json([
     'success' => true,
     'message' => 'Entrada registrada exitosamente',
     'data' => [
         'vehicle' => $vehicle,
         'parking_space' => $espacio,
         'entry' => $entry,
-        'ticket_html' => $ticketHtml, // Aquí mandamos el HTML del ticket
+        'ticket_html' => $ticketHtml,
     ]
 ]);
+
             });
         } catch (\Exception $e) {
             Log::error("Error al registrar entrada: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
@@ -203,8 +234,25 @@ class VehicleEntryController extends Controller
     }
 
     public function invoiceHtml($id)
-    {
-        $entry = VehicleEntry::with(['vehicle.tipoVehiculo', 'espacio.zona'])->findOrFail($id);
-        return view('parking.invoice-html', compact('entry'));
-    }
+{
+    $entrada = VehicleEntry::with(['vehicle.tipoVehiculo', 'espacio.zona'])->findOrFail($id);
+
+    // Generar QR
+    $plateFormatted = $entrada->vehicle?->plate
+        ? preg_replace('/^([A-Za-z]+)(\d+)$/', '$1-$2', $entrada->vehicle->plate)
+        : 'N/A';
+
+    $qrData  = "Placa: {$plateFormatted}\n";
+    $qrData .= "Tipo: " . ($entrada->vehicle?->tipoVehiculo?->nombre ?? 'N/A') . "\n";
+    $qrData .= "Marca/Modelo: " . ($entrada->vehicle?->brand ?? 'N/A') . " " . ($entrada->vehicle?->model ?? 'N/A') . "\n";
+    $qrData .= "Fecha - Hora Entrada: " . ($entrada->entry_time?->format('Y-m-d H:i:s') ?? 'N/A');
+
+    $qr = base64_encode(
+        \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
+            ->size(150)
+            ->generate($qrData)
+    );
+
+    return view('parking.ticket', compact('entrada', 'qr'));
+}
 }

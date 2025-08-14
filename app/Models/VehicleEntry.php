@@ -15,12 +15,21 @@ class VehicleEntry extends Model
         'espacio_id',
         'entry_time',
         'exit_time',
-         'ticket_code',
+        'ticket_code',
+        'casco',
+    'chaleco',
+    'llaves',
+    'otro',
+    'otro_texto',
     ];
 
     protected $casts = [
         'entry_time' => 'datetime',
-        'exit_time' => 'datetime'
+        'exit_time' => 'datetime',
+        'casco' => 'boolean',
+    'chaleco' => 'boolean',
+    'llaves' => 'boolean',
+    'otro' => 'boolean',
     ];
 
     public function vehicle(): BelongsTo

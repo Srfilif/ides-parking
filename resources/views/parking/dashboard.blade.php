@@ -113,6 +113,63 @@
                         <label for="entry_color" class="form-label">Color</label>
                         <input type="text" class="form-control" id="entry_color" name="color">
                     </div>
+              <div class="mb-3">
+    <label class="form-label">Objetos Dejados</label>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; align-items: center;">
+        <div class="form-check m-0">
+            <input class="form-check-input" type="checkbox" id="item_casco" name="casco" value="1">
+            <label class="form-check-label" for="item_casco">Casco</label>
+        </div>
+        <div class="form-check m-0">
+            <input class="form-check-input" type="checkbox" id="item_chaleco" name="chaleco" value="1">
+            <label class="form-check-label" for="item_chaleco">Chaleco</label>
+        </div>
+        <div class="form-check m-0">
+            <input class="form-check-input" type="checkbox" id="item_llaves" name="llaves" value="1">
+            <label class="form-check-label" for="item_llaves">Llaves</label>
+        </div>
+       <div class="d-flex align-items-center m-0" style="gap: 8px; margin-top: 2px;">
+    <input class="form-check-input mt-0" type="checkbox" id="item_otro" name="otro" value="1">
+    <label class="form-check-label mb-0" for="item_otro">Otro</label>
+    <div class="hidden-box">
+        <input type="text" class="form-control form-control-sm p-1" 
+               name="otro_texto" 
+               placeholder="¿Cuál?"
+               style="width: 100px; height: 30px;">
+    </div>
+</div>
+
+<style>
+.hidden-box {
+    max-width: 0;
+    opacity: 0;
+    overflow: hidden;
+    transition: all 0.4s ease;
+}
+
+.hidden-box.show {
+    max-width: 120px;
+    opacity: 1;
+}
+</style>
+
+<script>
+    const checkboxOtro = document.getElementById('item_otro');
+    const hiddenBox = document.querySelector('.hidden-box');
+    const inputOtro = document.querySelector('input[name="otro_texto"]');
+
+    checkboxOtro.addEventListener('change', function () {
+        if (this.checked) {
+            hiddenBox.classList.add('show');
+            setTimeout(() => inputOtro.focus(), 300);
+        } else {
+            hiddenBox.classList.remove('show');
+            inputOtro.value = '';
+        }
+    });
+</script>
+    </div>
+</div>
                     <button type="submit" class="btn btn-success w-100">
                         <i class="fas fa-plus me-2"></i>Registrar Entrada
                     </button>
@@ -162,7 +219,7 @@
                                 <th>Marca/Modelo</th>
                                 <th>Color</th>
                                 <th>Espacio</th>
-                                <th>Hora de Entrada</th>
+                                <th>Fecha/Hora de Entrada</th>
                                 <th>Tiempo Estacionado</th>
                                 <th>Factura</th>
                             </tr>
@@ -196,8 +253,8 @@
                                     </span>
                                 </td>
                                 <td>
-   <button class="btn btn-sm btn-primary btn-imprimir" data-entry-id="{{ $entry->id }}">
-    <i class="fas fa-file-pdf"></i> Imprimir
+<button class="btn btn-sm btn-primary btn-imprimir" data-entry-id="{{ $entry->id }}">
+    <i class="fas fa-receipt"></i> Recibo Entrada
 </button>
 </td>
                             </tr>
@@ -217,24 +274,21 @@
 </div>
 <!-- Modal para la factura -->
 <div class="modal fade" id="invoiceModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 90mm; margin:auto;">
-    <div class="modal-content" style="width: 80mm; margin: auto;">
-      <div class="modal-header p-2">
-        <h6 class="modal-title">Factura de Entrada</h6>
+  <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+    <div class="modal-content" style="width: 380px; margin: auto;">
+      <div class="modal-header">
+        <h5 class="modal-title">Factura de Entrada</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
-
-      <div class="modal-body p-2 text-center" id="invoiceContent" style="min-width: 80mm;">
-        <div class="text-muted">Cargando factura...</div>
+      <div class="modal-body d-flex justify-content-center">
+        <div id="invoiceContent" style="text-align:center;">
+          <div class="text-muted">Cargando factura...</div>
+        </div>
       </div>
-    </div>
-  </div>
-</div>
 
-      <!-- Pie del modal con botón para imprimir -->
-      <div class="modal-footer">
-        <button type="button" class="btn btn-success" onclick="printDiv('printableArea')">
-          Imprimir Recibo
+      <div class="modal-footer justify-content-center">
+        <button id="btnPrint" class="btn btn-primary">
+          Imprimir
         </button>
       </div>
     </div>
@@ -309,6 +363,69 @@ function printDiv(divId) {
 
 @section('scripts')
 <script>
+    
+    document.getElementById('btnPrint').addEventListener('click', function() {
+    var printContents = document.getElementById('invoiceContent').innerHTML;
+    var originalContents = document.body.innerHTML;
+
+    document.body.innerHTML = printContents;
+
+    window.print(); // Esto abrirá directamente la ventana de impresión
+
+    document.body.innerHTML = originalContents; // Restauramos la página
+    location.reload(); // Recargamos para que el modal funcione correctamente después de imprimir
+});
+
+   
+$(document).ready(function() {
+
+  $(document).ready(function() {
+    function openInvoiceModal(entryId) {
+        $('#invoiceContent').html('<div class="text-muted">Cargando factura...</div>');
+        const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+        modal.show();
+
+        // URL generada dinámicamente
+        const url = "{{ url('factura-html') }}/" + entryId;
+
+        $.get(url, function(html) {
+            $('#invoiceContent').html(html);
+        }).fail(function() {
+            $('#invoiceContent').html('<div class="text-danger">No se pudo cargar la factura.</div>');
+        });
+    }
+
+    $(document).on('click', '.btn-imprimir', function () {
+        const entryId = $(this).data('entry-id');
+        openInvoiceModal(entryId);
+    });
+});
+
+    // Botón de imprimir dentro del modal
+    $(document).on('click', '#btnPrint', function() {
+        const printContents = $('#invoiceContent').html();
+        const myWindow = window.open('', '', 'width=800,height=600');
+        myWindow.document.write(`
+            <html>
+            <head>
+                <title>Factura</title>
+                <style>
+                    body { text-align: center; font-family: Arial, sans-serif; }
+                </style>
+            </head>
+            <body>${printContents}</body>
+            </html>
+        `);
+        myWindow.document.close();
+        myWindow.focus();
+        myWindow.print();
+        myWindow.close();
+    });
+
+});
+
+
+
     $(document).ready(function() {
         // Convertir a mayúsculas automáticamente
         $('.plate-input').on('input', function() {
