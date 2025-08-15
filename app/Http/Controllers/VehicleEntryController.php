@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Vehicle;
 use App\Models\VehicleEntry;
+use App\Models\Marca; // Asegúrate de importar el modelo Marca
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -29,125 +31,133 @@ class VehicleEntryController extends Controller
 
         $totalSpaces = Espacios_parqueadero::count();
         $tipos = TipoVehiculo::all();
+    $marcas = Marca::all(); // Trae todas las marcas
 
-        return view('parking.dashboard', compact('activeEntries', 'availableSpaces', 'totalSpaces', 'tipos', 'espaciosDisponibles'));
+        return view('parking.dashboard', compact('activeEntries', 'availableSpaces', 'totalSpaces', 'tipos', 'espaciosDisponibles','marcas'));
     }
 
-    public function registerEntry(Request $request)
-    {
-        $request->validate([
-            'plate' => ['required', 'string', 'regex:/^[A-Z]{3}[0-9]{2}[0-9A-Z]$/'],
-            'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
-            'brand' => 'nullable|string|max:50',
-            'model' => 'nullable|string|max:50',
-            'color' => 'nullable|string|max:30',
-        ]);
+   public function registerEntry(Request $request)
+{
+    $request->validate([
+        'plate' => ['required', 'string', 'regex:/^[A-Z]{3}[0-9]{2}[0-9A-Z]$/'],
+        'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
+        'marca_id' => 'nullable|exists:marcas,id', // Validamos el ID de la marca
+        'model' => 'nullable|string|max:50',
+        'color' => 'nullable|string|max:30',
+    ]);
 
-        try {
-            return DB::transaction(function () use ($request) {
-                $plate = strtoupper($request->plate);
+    try {
+        return DB::transaction(function () use ($request) {
+            $plate = strtoupper($request->plate);
 
-                // Buscar o crear vehículo
-                $vehicle = Vehicle::firstOrCreate(
-                    ['plate' => $plate],
-                    [
-                        'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
-                        'brand' => $request->brand,
-                        'model' => $request->model,
-                        'color' => $request->color
-                    ]
-                );
+            // Buscar o crear vehículo
+            $vehicle = Vehicle::firstOrCreate(
+                ['plate' => $plate],
+                [
+                    'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
+                    'brand' => $request->marca_id, // Guardamos el ID en "brand"
+                    'model' => $request->model,
+                    'color' => $request->color
+                ]
+            );
 
-                // Verificar si ya está estacionado
-                if ($vehicle->isParked()) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'El vehículo ya se encuentra estacionado'
-                    ], 400);
+            // Verificar si ya está estacionado
+            if ($vehicle->isParked()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'El vehículo ya se encuentra estacionado'
+                ], 400);
+            }
+
+            // Buscar espacio compatible
+            $tipo = TipoVehiculo::find($request->tipo_vehiculo_id);
+            $zonasCompatibles = Compatibilidades::where('tipo_vehiculo_id', $tipo->id)->pluck('zona_id');
+            $espaciosOcupados = VehicleEntry::whereNull('exit_time')->pluck('espacio_id');
+
+            $espacio = Espacios_parqueadero::whereNotIn('id', $espaciosOcupados)
+                ->whereIn('zona_id', $zonasCompatibles)
+                ->first();
+
+            if (!$espacio) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No hay espacios disponibles para este tipo de vehículo'
+                ], 400);
+            }
+
+            // Elementos opcionales
+            $casco = $request->has('casco');
+            $chaleco = $request->has('chaleco');
+            $llaves = $request->has('llaves');
+            $otro = $request->has('otro');
+            $otro_texto = $otro ? $request->input('otro_texto') : null;
+
+            // Crear entrada
+            $entry = VehicleEntry::create([
+                'vehicle_id' => $vehicle->id,
+                'espacio_id' => $espacio->id,
+                'brand' => $request->marca_id, // También guardamos el ID aquí
+                'entry_time' => Carbon::now(),
+                'ticket_code' => (string) Str::uuid(),
+                'casco' => $casco,
+                'chaleco' => $chaleco,
+                'llaves' => $llaves,
+                'otro' => $otro,
+                'otro_texto' => $otro_texto,
+            ]);
+
+            if (!$entry) {
+                throw new \Exception("No se pudo crear el registro de entrada.");
+            }
+
+            // Generar QR
+            $plateFormatted = preg_replace('/^([A-Za-z]+)(\d+)$/', '$1-$2', $vehicle->plate);
+            
+            // Obtener el nombre de la marca si existe
+            $marcaNombre = 'N/A';
+            if ($request->filled('marca_id')) {
+                $marca = Marca::find($request->marca_id);
+                if ($marca) {
+                    $marcaNombre = $marca->nombre;
                 }
+            }
 
-                // Buscar espacio compatible
-                $tipo = TipoVehiculo::find($request->tipo_vehiculo_id);
-                $zonasCompatibles = Compatibilidades::where('tipo_vehiculo_id', $tipo->id)->pluck('zona_id');
-                $espaciosOcupados = VehicleEntry::whereNull('exit_time')->pluck('espacio_id');
+            $qrData  = "Placa: {$plateFormatted}\n";
+            $qrData .= "Tipo: {$vehicle->tipoVehiculo->nombre}\n";
+            $qrData .= "Marca/Modelo: {$marcaNombre} " . ($vehicle->model ?? 'N/A') . "\n";
+            $qrData .= "Fecha - Hora Entrada: " . $entry->created_at->format('Y-m-d H:i:s');
 
-                $espacio = Espacios_parqueadero::whereNotIn('id', $espaciosOcupados)
-                    ->whereIn('zona_id', $zonasCompatibles)
-                    ->first();
+            $qr = base64_encode(
+                QrCode::format('png')
+                    ->size(150)
+                    ->generate($qrData)
+            );
 
-                if (!$espacio) {
-                    return response()->json([
-                        'success' => false,
-                        'message' => 'No hay espacios disponibles para este tipo de vehículo'
-                    ], 400);
-                    
-                }
+            // Renderizar ticket
+            $ticketHtml = view('parking.ticket', [
+                'entrada' => $entry,
+                'qr' => $qr
+            ])->render();
 
-                $casco = $request->has('casco');
-$chaleco = $request->has('chaleco');
-$llaves = $request->has('llaves');
-$otro = $request->has('otro');
-$otro_texto = $otro ? $request->input('otro_texto') : null;
-
-                // Crear entrada
-                $entry = VehicleEntry::create([
-                     'vehicle_id' => $vehicle->id,
-    'espacio_id' => $espacio->id,
-    'entry_time' => Carbon::now(),
-    'ticket_code' => (string) Str::uuid(),
-    'casco' => $casco,
-    'chaleco' => $chaleco,
-    'llaves' => $llaves,
-    'otro' => $otro,
-    'otro_texto' => $otro_texto,
-                ]);
-
-                if (!$entry) {
-                    throw new \Exception("No se pudo crear el registro de entrada.");
-                }
-
-                // Generar QR
-                // Preparar datos para el QR
-                $plateFormatted = preg_replace('/^([A-Za-z]+)(\d+)$/', '$1-$2', $vehicle->plate);
-
-$qrData  = "Placa: {$plateFormatted}\n";
-$qrData .= "Tipo: {$vehicle->tipoVehiculo->nombre}\n";
-$qrData .= "Marca/Modelo: " . ($vehicle->brand ?? 'N/A') . " " . ($vehicle->model ?? 'N/A') . "\n";
-$qrData .= "Fecha - Hora Entrada: " . $entry->created_at->format('Y-m-d H:i:s');
-
-// Generar QR con la información combinada
-$qr = base64_encode(
-    QrCode::format('png')
-        ->size(150)
-        ->generate($qrData)
-);
-
-// Renderizar ticket
-$ticketHtml = view('parking.ticket', [
-    'entrada' => $entry,
-    'qr' => $qr
-])->render();
-
-return response()->json([
-    'success' => true,
-    'message' => 'Entrada registrada exitosamente',
-    'data' => [
-        'vehicle' => $vehicle,
-        'parking_space' => $espacio,
-        'entry' => $entry,
-        'ticket_html' => $ticketHtml,
-    ]
-]);
-
-            });
-        } catch (\Exception $e) {
-            Log::error("Error al registrar entrada: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return response()->json([
-                'success' => false,
-                'message' => 'Error al registrar entrada: ' . $e->getMessage()
-            ], 500);
-        }
+                'success' => true,
+                'message' => 'Entrada registrada exitosamente',
+                'data' => [
+                    'vehicle' => $vehicle,
+                    'parking_space' => $espacio,
+                    'entry' => $entry,
+                    'ticket_html' => $ticketHtml,
+                ]
+            ]);
+        });
+    } catch (\Exception $e) {
+        Log::error("Error al registrar entrada: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+        return response()->json([
+            'success' => false,
+            'message' => 'Error al registrar entrada: ' . $e->getMessage()
+        ], 500);
     }
+}
 
     public function registerExit(Request $request)
     {
@@ -235,16 +245,19 @@ return response()->json([
 
     public function invoiceHtml($id)
 {
-    $entrada = VehicleEntry::with(['vehicle.tipoVehiculo', 'espacio.zona'])->findOrFail($id);
+    $entrada = VehicleEntry::with(['vehicle.tipoVehiculo', 'espacio.zona', 'vehicle.marca'])->findOrFail($id);
 
     // Generar QR
     $plateFormatted = $entrada->vehicle?->plate
         ? preg_replace('/^([A-Za-z]+)(\d+)$/', '$1-$2', $entrada->vehicle->plate)
         : 'N/A';
+    
+    // Obtener el nombre de la marca desde la relación
+    $marcaNombre = $entrada->vehicle?->marca?->nombre ?? 'N/A';
 
     $qrData  = "Placa: {$plateFormatted}\n";
     $qrData .= "Tipo: " . ($entrada->vehicle?->tipoVehiculo?->nombre ?? 'N/A') . "\n";
-    $qrData .= "Marca/Modelo: " . ($entrada->vehicle?->brand ?? 'N/A') . " " . ($entrada->vehicle?->model ?? 'N/A') . "\n";
+    $qrData .= "Marca/Modelo: {$marcaNombre} " . ($entrada->vehicle?->model ?? 'N/A') . "\n";
     $qrData .= "Fecha - Hora Entrada: " . ($entrada->entry_time?->format('Y-m-d H:i:s') ?? 'N/A');
 
     $qr = base64_encode(

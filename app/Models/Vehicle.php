@@ -50,4 +50,9 @@ class Vehicle extends Model
     {
         return $this->belongsTo(TipoVehiculo::class, 'tipo_vehiculo_id');
     }
+    public function marca()
+{
+    return $this->belongsTo(Marca::class, 'brand'); // 'brand' es la columna que guarda el marca_id
+}
+
 }
