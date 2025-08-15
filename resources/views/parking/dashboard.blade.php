@@ -335,6 +335,7 @@
         myWindow.close();
     }
 </script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
 @endsection
@@ -561,54 +562,7 @@
                 $('.alert').fadeOut();
             }, 5000);
         }
-// Manejar salida desde el botón de la tabla
-$(document).on('click', '.btn-exit-table', function() {
-    const plate = $(this).data('plate');
-    const button = $(this);
-    const originalText = button.html();
-
-    button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Procesando...');
-
-    $.ajax({
-        url: '{{ route("parking.exit") }}',
-        method: 'POST',
-        data: {
-            _token: '{{ csrf_token() }}',
-            plate: plate
-        },
-        success: function(response) {
-            if (response.success) {
-                showAlert('success', response.message);
-
-                if (response.data && response.data.duration_minutes) {
-                    const hours = Math.floor(response.data.duration_minutes / 60);
-                    const minutes = response.data.duration_minutes % 60;
-                    const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-                    showAlert('info', `Tiempo estacionado: ${duration}`);
-                }
-
-                setTimeout(() => location.reload(), 2000);
-            } else {
-                showAlert('danger', response.message);
-            }
-        },
-        error: function(xhr) {
-            const response = xhr.responseJSON;
-            let message = 'Error al registrar salida';
-
-            if (response && response.message) {
-                message = response.message;
-            } else if (response && response.errors) {
-                message = Object.values(response.errors).flat().join(', ');
-            }
-
-            showAlert('danger', message);
-        },
-        complete: function() {
-            button.prop('disabled', false).html(originalText);
-        }
-    });
-});
+        
 
         $('#type').on('change', function() {
             const tipoVehiculoId = $(this).val();
@@ -641,4 +595,110 @@ $(document).on('click', '.btn-exit-table', function() {
         });
     });
 </script>
+
+<script>
+    $(document).ready(function () {
+        // Manejar salida desde el botón de la tabla con confirmación
+        $(document).on('click', '.btn-exit-table', function () {
+            const plate = $(this).data('plate');
+            const button = $(this);
+            const originalText = button.html();
+
+            // Mostrar spinner mientras se obtiene la información del vehículo
+            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Procesando...');
+
+            // Llamar a la API para obtener la imagen y datos del vehículo
+$.get(`http://localhost:8000/api/vehicle/plate/generate?number=${plate}&region=bogotad`, function (data) {
+    console.log(data); // <--- Esto te mostrará qué campos contiene la respuesta
+    // luego sigue tu código...
+
+                // data debería contener la URL de la imagen y opcionalmente info del vehículo
+const plateImageUrl = data.image || `http://localhost:8000/api/vehicle/plate/generate?number=${plate}&region=bogotad`;
+                const vehicleBrand = data.brand || 'Marca desconocida';
+                const vehicleModel = data.model || 'Modelo desconocido';
+                const vehicleType = data.type || 'Tipo desconocido';
+
+                Swal.fire({
+                    title: `¿Confirmar salida del vehículo?`,
+                    html: `
+                        <div style="text-align:center">
+                            <img src="${plateImageUrl}" alt="Placa" style="max-width:300px; margin-bottom:10px;">
+                            <p><strong>Placa:</strong> ${plate}</p>
+                            <p><strong>Marca:</strong> ${vehicleBrand}</p>
+                            <p><strong>Modelo:</strong> ${vehicleModel}</p>
+                            <p><strong>Tipo:</strong> ${vehicleType}</p>
+                        </div>
+                    `,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, sacar vehículo',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Ejecutar salida si confirma
+                        $.ajax({
+                            url: '{{ route("parking.exit") }}',
+                            method: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                plate: plate
+                            },
+                            success: function (response) {
+                                if (response.success) {
+                                    showAlert('success', response.message);
+
+                                    if (response.data && response.data.duration_minutes) {
+                                        const hours = Math.floor(response.data.duration_minutes / 60);
+                                        const minutes = response.data.duration_minutes % 60;
+                                        const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                                        showAlert('info', `Tiempo estacionado: ${duration}`);
+                                    }
+
+                                    setTimeout(() => location.reload(), 2000);
+                                } else {
+                                    showAlert('danger', response.message);
+                                }
+                            },
+                            error: function (xhr) {
+                                const response = xhr.responseJSON;
+                                let message = 'Error al registrar salida';
+
+                                if (response && response.message) {
+                                    message = response.message;
+                                } else if (response && response.errors) {
+                                    message = Object.values(response.errors).flat().join(', ');
+                                }
+
+                                showAlert('danger', message);
+                            },
+                            complete: function () {
+                                button.prop('disabled', false).html(originalText);
+                            }
+                        });
+                    } else {
+                        // Si cancela, restaurar botón
+                        button.prop('disabled', false).html(originalText);
+                    }
+                });
+            }).fail(function () {
+                showAlert('danger', 'No se pudo obtener la información del vehículo.');
+                button.prop('disabled', false).html(originalText);
+            });
+        });
+
+        // Función para mostrar alertas bootstrap
+        function showAlert(type, message) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            $('.container').prepend(alertHtml);
+            setTimeout(() => { $('.alert').fadeOut(); }, 5000);
+        }
+    });
+</script>
+
+
 @endsection

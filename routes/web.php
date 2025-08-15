@@ -20,6 +20,7 @@ use App\Http\Controllers\TarifaController;
 
 use App\Http\Controllers\MarcaController;
 
+Route::get('/api/vehicle/plate/generate', [VehicleController::class, 'generatePlate']);
 
 // ... otras rutas
 Route::resource('marcas', MarcaController::class);
