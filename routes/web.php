@@ -18,7 +18,11 @@ use App\Http\Controllers\EspacioParqueaderoController;
 use App\Http\Controllers\CompatibilidadController;
 use App\Http\Controllers\TarifaController;
 
+use App\Http\Controllers\MarcaController;
 
+
+// ... otras rutas
+Route::resource('marcas', MarcaController::class);
 Route::post('/notificaciones/leidas', function () {
     auth()->user()->unreadNotifications->markAsRead();
     return back();

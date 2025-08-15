@@ -36,7 +36,7 @@ class DatabaseSeeder extends Seeder
             TipoDocumentoSeeder::class,
             // ParkingSpaceSeeder::class,
             ZonaSeeder::class,
-            Espacios_parqueadero::class,
+            EspaciosParqueaderoSeeder::class,
         ]);
 
     }
