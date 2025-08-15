@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Carbon\Carbon;
 
 class VehicleEntry extends Model
 {
@@ -47,12 +48,55 @@ public function espacio(): BelongsTo
     return $this->belongsTo(Espacios_parqueadero::class, 'espacio_id');
 }
 
+ public function isActive()
+    {
+        return is_null($this->exit_time);
+    }
+
+    /**
+     * Obtener la duración de la estancia
+     */
     public function getDurationAttribute()
     {
         if (!$this->exit_time) {
-            return null;
+            return $this->entry_time->diffInMinutes(Carbon::now());
         }
         
         return $this->entry_time->diffInMinutes($this->exit_time);
+    }
+    /**
+     * Obtener la duración en horas
+     */
+    public function getDurationHoursAttribute()
+    {
+        return ceil($this->duration / 60);
+    }
+
+    /**
+     * Obtener la duración en días
+     */
+    public function getDurationDaysAttribute()
+    {
+        if (!$this->exit_time) {
+            return $this->entry_time->diffInDays(Carbon::now());
+        }
+        
+        return $this->entry_time->diffInDays($this->exit_time);
+    }
+
+    /**
+     * Scope para entradas activas
+     */
+    public function scopeActive($query)
+    {
+        return $query->whereNull('exit_time');
+    }
+
+    /**
+     * Scope para entradas completadas
+     */
+    public function scopeCompleted($query)
+    {
+        return $query->whereNotNull('exit_time');
     }
 }

@@ -595,7 +595,6 @@
         });
     });
 </script>
-
 <script>
     $(document).ready(function () {
         // Manejar salida desde el botón de la tabla con confirmación
@@ -608,12 +607,10 @@
             button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Procesando...');
 
             // Llamar a la API para obtener la imagen y datos del vehículo
-$.get(`http://localhost:8000/api/vehicle/plate/generate?number=${plate}&region=bogotad`, function (data) {
-    console.log(data); // <--- Esto te mostrará qué campos contiene la respuesta
-    // luego sigue tu código...
+            $.get(`http://localhost:8000/api/vehicle/plate/generate?number=${plate}&region=bogotad`, function (data) {
+                console.log(data);
 
-                // data debería contener la URL de la imagen y opcionalmente info del vehículo
-const plateImageUrl = data.image || `http://localhost:8000/api/vehicle/plate/generate?number=${plate}&region=bogotad`;
+                const plateImageUrl = data.image || `http://localhost:8000/api/vehicle/plate/generate?number=${plate}&region=bogotad`;
                 const vehicleBrand = data.brand || 'Marca desconocida';
                 const vehicleModel = data.model || 'Modelo desconocido';
                 const vehicleType = data.type || 'Tipo desconocido';
@@ -637,7 +634,7 @@ const plateImageUrl = data.image || `http://localhost:8000/api/vehicle/plate/gen
                     if (result.isConfirmed) {
                         // Ejecutar salida si confirma
                         $.ajax({
-                            url: '{{ route("parking.exit") }}',
+                            url: '{{ route("parking.register-exit") }}', // Cambiado a la nueva ruta
                             method: 'POST',
                             data: {
                                 _token: '{{ csrf_token() }}',
@@ -645,16 +642,19 @@ const plateImageUrl = data.image || `http://localhost:8000/api/vehicle/plate/gen
                             },
                             success: function (response) {
                                 if (response.success) {
+                                    // Mostrar resumen del costo
+                                    showExitSummary(response.data);
+                                    
+                                    // Imprimir factura automáticamente
+                                    if (response.data.pdf_base64) {
+                                        printInvoice(response.data.pdf_base64, response.data.filename);
+                                    }
+                                    
+                                    // Mostrar alerta de éxito
                                     showAlert('success', response.message);
 
-                                    if (response.data && response.data.duration_minutes) {
-                                        const hours = Math.floor(response.data.duration_minutes / 60);
-                                        const minutes = response.data.duration_minutes % 60;
-                                        const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-                                        showAlert('info', `Tiempo estacionado: ${duration}`);
-                                    }
-
-                                    setTimeout(() => location.reload(), 2000);
+                                    // Recargar página después de un momento
+                                    setTimeout(() => location.reload(), 3000);
                                 } else {
                                     showAlert('danger', response.message);
                                 }
@@ -686,6 +686,136 @@ const plateImageUrl = data.image || `http://localhost:8000/api/vehicle/plate/gen
             });
         });
 
+        // Función para mostrar resumen de salida con costo
+        function showExitSummary(data) {
+            const hours = Math.floor(data.duration_minutes / 60);
+            const minutes = data.duration_minutes % 60;
+            const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+            Swal.fire({
+                title: '¡Salida Registrada!',
+                html: `
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <h4 class="text-success">Vehículo: ${data.vehicle.plate}</h4>
+                        </div>
+                        <div class="row text-start">
+                            <div class="col-6">
+                                <p><strong>Entrada:</strong><br>${formatDateTime(data.entry_time)}</p>
+                                <p><strong>Salida:</strong><br>${formatDateTime(data.exit_time)}</p>
+                                <p><strong>Duración:</strong><br>${duration}</p>
+                            </div>
+                            <div class="col-6">
+                                <p><strong>Espacio:</strong><br>${data.parking_space.numero_espacio}</p>
+                                <p><strong>Zona:</strong><br>${data.zona.nombre}</p>
+                                <p><strong>Tarifa:</strong><br>${data.tarifa_aplicada}</p>
+                            </div>
+                        </div>
+                        <hr>
+                        <div class="alert alert-success">
+                            <h3 class="mb-0">Total: $${formatCurrency(data.costo_total)}</h3>
+                        </div>
+                        <p class="text-muted mt-2">La factura se está imprimiendo automáticamente</p>
+                    </div>
+                `,
+                icon: 'success',
+                confirmButtonText: 'Aceptar',
+                showCancelButton: true,
+                cancelButtonText: 'Reimprimir Factura',
+                cancelButtonColor: '#6c757d'
+            }).then((result) => {
+                if (result.dismiss === Swal.DismissReason.cancel) {
+                    // Reimprimir factura si se solicita
+                    if (data.pdf_base64) {
+                        printInvoice(data.pdf_base64, data.filename);
+                    }
+                }
+            });
+        }
+
+        // Función para imprimir la factura
+        function printInvoice(pdfBase64, filename) {
+            try {
+                // Método 1: Abrir en nueva ventana para imprimir
+                const pdfWindow = window.open();
+                pdfWindow.document.write(`
+                    <html>
+                        <head>
+                            <title>Factura - ${filename}</title>
+                        </head>
+                        <body style="margin:0;">
+                            <embed src="data:application/pdf;base64,${pdfBase64}" 
+                                   width="100%" height="100%" type="application/pdf">
+                        </body>
+                    </html>
+                `);
+                
+                // Esperar a que cargue y luego imprimir
+                pdfWindow.onload = function() {
+                    setTimeout(() => {
+                        pdfWindow.print();
+                    }, 1000);
+                };
+
+                // Método alternativo: Crear iframe oculto para imprimir
+                printPDFAlternative(pdfBase64);
+                
+            } catch (error) {
+                console.error('Error al imprimir:', error);
+                // Fallback: descargar el PDF
+                downloadPDF(pdfBase64, filename);
+                showAlert('info', 'No se pudo imprimir automáticamente. Se descargará el archivo.');
+            }
+        }
+
+        // Método alternativo para imprimir usando iframe
+        function printPDFAlternative(pdfBase64) {
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            iframe.src = `data:application/pdf;base64,${pdfBase64}`;
+            
+            document.body.appendChild(iframe);
+            
+            iframe.onload = function() {
+                setTimeout(() => {
+                    try {
+                        iframe.contentWindow.print();
+                    } catch (e) {
+                        console.log('No se pudo imprimir con iframe:', e);
+                    }
+                    // Remover iframe después de un tiempo
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                    }, 1000);
+                }, 500);
+            };
+        }
+
+        // Función para descargar PDF como fallback
+        function downloadPDF(base64Data, filename) {
+            const link = document.createElement('a');
+            link.href = 'data:application/pdf;base64,' + base64Data;
+            link.download = filename;
+            link.click();
+        }
+
+        // Función para formatear fecha y hora
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('es-CO', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Función para formatear moneda
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('es-CO').format(amount);
+        }
+
         // Función para mostrar alertas bootstrap
         function showAlert(type, message) {
             const alertHtml = `
@@ -696,6 +826,21 @@ const plateImageUrl = data.image || `http://localhost:8000/api/vehicle/plate/gen
             `;
             $('.container').prepend(alertHtml);
             setTimeout(() => { $('.alert').fadeOut(); }, 5000);
+        }
+
+        // Función adicional para imprimir factura desde botón específico
+        window.printReceiptById = function(entryId) {
+            window.open(`/parking/exit-receipt/${entryId}/pdf`, '_blank');
+        }
+
+        // Botón para reimprimir última factura (opcional)
+        window.reprintLastReceipt = function() {
+            const lastEntryId = localStorage.getItem('lastExitEntryId');
+            if (lastEntryId) {
+                printReceiptById(lastEntryId);
+            } else {
+                showAlert('warning', 'No hay una factura reciente para reimprimir.');
+            }
         }
     });
 </script>

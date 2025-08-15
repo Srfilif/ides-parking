@@ -4,8 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Vehicle;
 use App\Models\VehicleEntry;
-use App\Models\Marca; // Asegúrate de importar el modelo Marca
-
+use App\Models\Marca;
+use App\Models\Tarifa;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -15,6 +15,7 @@ use Illuminate\Support\Str;
 use App\Models\Compatibilidades;
 use App\Models\Espacios_parqueadero;
 use App\Models\TipoVehiculo;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class VehicleEntryController extends Controller
 {
@@ -187,26 +188,179 @@ class VehicleEntryController extends Controller
                 }
 
                 $exitTime = Carbon::now();
-                $entry->update(['exit_time' => $exitTime]);
-                $duration = $entry->entry_time->diffInMinutes($exitTime);
+                $entryTime = $entry->entry_time;
+                
+                // Calcular duración
+                $durationMinutes = $entryTime->diffInMinutes($exitTime);
+                $durationHours = ceil($durationMinutes / 60); // Redondear hacia arriba
+                $durationDays = $entryTime->diffInDays($exitTime);
+                
+                // Obtener tarifa aplicable
+                $tarifa = Tarifa::where('zona_id', $entry->espacio->zona_id)
+                    ->where('tipo_vehiculo_id', $vehicle->tipo_vehiculo_id)
+                    ->first();
+
+                $costoTotal = 0;
+                $tarifaAplicada = 'Sin tarifa configurada';
+
+                if ($tarifa) {
+                    if ($durationDays > 0) {
+                        // Si son más de 24 horas, usar tarifa por día
+                        $costoTotal = $durationDays * $tarifa->precio_dia;
+                        $tarifaAplicada = "Tarifa por día: $" . number_format($tarifa->precio_dia, 0) . " x {$durationDays} día(s)";
+                    } else {
+                        // Usar tarifa por hora
+                        $costoTotal = $durationHours * $tarifa->precio_hora;
+                        $tarifaAplicada = "Tarifa por hora: $" . number_format($tarifa->precio_hora, 0) . " x {$durationHours} hora(s)";
+                    }
+                }
+
+                // Actualizar la entrada con el tiempo de salida y costo
+                $entry->update([
+                    'exit_time' => $exitTime,
+                    'costo_total' => $costoTotal,
+                    'duracion_minutos' => $durationMinutes,
+                    'tarifa_aplicada' => $tarifaAplicada
+                ]);
+
+                // Generar PDF del recibo
+                $reciboData = [
+                    'entry' => $entry->fresh(['vehicle.tipoVehiculo', 'vehicle.marca', 'espacio.zona']),
+                    'vehicle' => $vehicle,
+                    'entryTime' => $entryTime,
+                    'exitTime' => $exitTime,
+                    'durationMinutes' => $durationMinutes,
+                    'durationHours' => $durationHours,
+                    'durationDays' => $durationDays,
+                    'costoTotal' => $costoTotal,
+                    'tarifaAplicada' => $tarifaAplicada,
+                    'tarifa' => $tarifa,
+                    'fechaHoy' => Carbon::now()->format('d/m/Y H:i:s')
+                ];
+
+                // Generar QR para el recibo
+                $plateFormatted = preg_replace('/^([A-Za-z]+)(\d+)$/', '$1-$2', $vehicle->plate);
+                $marcaNombre = $vehicle->marca?->nombre ?? 'N/A';
+                
+                $qrData  = "RECIBO DE SALIDA\n";
+                $qrData .= "Placa: {$plateFormatted}\n";
+                $qrData .= "Tipo: {$vehicle->tipoVehiculo->nombre}\n";
+                $qrData .= "Marca: {$marcaNombre}\n";
+                $qrData .= "Entrada: " . $entryTime->format('d/m/Y H:i') . "\n";
+                $qrData .= "Salida: " . $exitTime->format('d/m/Y H:i') . "\n";
+                $qrData .= "Total: $" . number_format($costoTotal, 0);
+
+                $qr = base64_encode(
+                    QrCode::format('png')
+                        ->size(120)
+                        ->generate($qrData)
+                );
+
+                $reciboData['qr'] = $qr;
+
+                // Generar HTML del recibo
+                $reciboHtml = view('parking.exit-receipt', $reciboData)->render();
+
+                // Generar PDF
+                $pdf = Pdf::loadView('parking.exit-receipt', $reciboData);
+                $pdf->setPaper('A4', 'portrait');
+                
+                $pdfContent = $pdf->output();
+                $pdfBase64 = base64_encode($pdfContent);
 
                 return response()->json([
                     'success' => true,
                     'message' => 'Salida registrada exitosamente',
                     'data' => [
                         'vehicle' => $vehicle,
-                        'entry_time' => $entry->entry_time,
+                        'entry_time' => $entryTime,
                         'exit_time' => $exitTime,
-                        'duration_minutes' => $duration,
-                        'parking_space' => $entry->espacio
+                        'duration_minutes' => $durationMinutes,
+                        'duration_hours' => $durationHours,
+                        'duration_days' => $durationDays,
+                        'costo_total' => $costoTotal,
+                        'tarifa_aplicada' => $tarifaAplicada,
+                        'parking_space' => $entry->espacio,
+                        'zona' => $entry->espacio->zona,
+                        'recibo_html' => $reciboHtml,
+                        'pdf_base64' => $pdfBase64,
+                        'filename' => "recibo_salida_{$plate}_{$exitTime->format('YmdHis')}.pdf"
                     ]
                 ]);
             });
         } catch (\Exception $e) {
-            Log::error("Error al registrar salida: " . $e->getMessage());
+            Log::error("Error al registrar salida: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Error al registrar salida: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Generar PDF de recibo de salida por ID
+     */
+    public function generateExitReceiptPdf($entryId)
+    {
+        try {
+            $entry = VehicleEntry::with(['vehicle.tipoVehiculo', 'vehicle.marca', 'espacio.zona'])
+                ->findOrFail($entryId);
+
+            if (!$entry->exit_time) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Esta entrada no tiene registrada una salida'
+                ], 400);
+            }
+
+            // Recalcular datos si es necesario
+            $durationMinutes = $entry->entry_time->diffInMinutes($entry->exit_time);
+            $durationHours = ceil($durationMinutes / 60);
+            $durationDays = $entry->entry_time->diffInDays($entry->exit_time);
+
+            $reciboData = [
+                'entry' => $entry,
+                'vehicle' => $entry->vehicle,
+                'entryTime' => $entry->entry_time,
+                'exitTime' => $entry->exit_time,
+                'durationMinutes' => $durationMinutes,
+                'durationHours' => $durationHours,
+                'durationDays' => $durationDays,
+                'costoTotal' => $entry->costo_total ?? 0,
+                'tarifaAplicada' => $entry->tarifa_aplicada ?? 'No disponible',
+                'fechaHoy' => Carbon::now()->format('d/m/Y H:i:s')
+            ];
+
+            // Generar QR
+            $plateFormatted = preg_replace('/^([A-Za-z]+)(\d+)$/', '$1-$2', $entry->vehicle->plate);
+            $marcaNombre = $entry->vehicle->marca?->nombre ?? 'N/A';
+            
+            $qrData  = "RECIBO DE SALIDA\n";
+            $qrData .= "Placa: {$plateFormatted}\n";
+            $qrData .= "Entrada: " . $entry->entry_time->format('d/m/Y H:i') . "\n";
+            $qrData .= "Salida: " . $entry->exit_time->format('d/m/Y H:i') . "\n";
+            $qrData .= "Total: $" . number_format($entry->costo_total ?? 0, 0);
+
+            $qr = base64_encode(
+                QrCode::format('png')
+                    ->size(120)
+                    ->generate($qrData)
+            );
+
+            $reciboData['qr'] = $qr;
+
+            $pdf = Pdf::loadView('parking.exit-receipt', $reciboData);
+            $pdf->setPaper('A4', 'portrait');
+
+            $filename = "recibo_salida_{$entry->vehicle->plate}_{$entry->exit_time->format('YmdHis')}.pdf";
+            
+            return $pdf->download($filename);
+
+        } catch (\Exception $e) {
+            Log::error("Error al generar PDF de recibo: " . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Error al generar el recibo: ' . $e->getMessage()
             ], 500);
         }
     }

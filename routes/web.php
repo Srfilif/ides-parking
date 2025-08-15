@@ -18,6 +18,20 @@ use App\Http\Controllers\EspacioParqueaderoController;
 use App\Http\Controllers\CompatibilidadController;
 use App\Http\Controllers\TarifaController;
 
+
+// Rutas existentes...
+
+// Ruta para registrar salida con PDF
+Route::post('/parking/register-exit', [VehicleEntryController::class, 'registerExit'])
+    ->name('parking.register-exit');
+
+// Ruta para generar PDF de recibo de salida por ID
+Route::get('/parking/exit-receipt/{id}/pdf', [VehicleEntryController::class, 'generateExitReceiptPdf'])
+    ->name('parking.exit-receipt.pdf');
+
+// Ruta para mostrar recibo de salida en HTML (opcional)
+Route::get('/parking/exit-receipt/{id}', [VehicleEntryController::class, 'showExitReceipt'])
+    ->name('parking.exit-receipt.show');
 use App\Http\Controllers\MarcaController;
 
 Route::get('/api/vehicle/plate/generate', [VehicleController::class, 'generatePlate']);
