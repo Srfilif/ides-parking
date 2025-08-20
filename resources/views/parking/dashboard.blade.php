@@ -96,18 +96,18 @@
                     </div>
 
                     <div class="row">
-                       <div class="col-md-6">
-    <div class="mb-3">
-        <label for="entry_brand" class="form-label">Marca</label>
-<select class="form-select" id="entry_brand" name="marca_id">
-    <option value="">Selecciona una marca</option>
-    @foreach($marcas as $marca)
-        <option value="{{ $marca->id }}">{{ $marca->nombre }}</option>
-    @endforeach
-</select>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="entry_brand" class="form-label">Marca</label>
+                                <select class="form-select" id="entry_brand" name="marca_id">
+                                    <option value="">Selecciona una marca</option>
+                                    @foreach($marcas as $marca)
+                                    <option value="{{ $marca->id }}">{{ $marca->nombre }}</option>
+                                    @endforeach
+                                </select>
 
-    </div>
-</div>
+                            </div>
+                        </div>
 
                         <div class="col-md-6">
                             <div class="mb-3">
@@ -215,10 +215,100 @@
             <div class="card-header">
                 <h5 class="mb-0"><i class="fas fa-car me-2"></i>Vehículos Estacionados ({{ $activeEntries->count() }})</h5>
             </div>
+            
+            <!-- Sección de Búsqueda -->
+            <div class="card-body border-bottom">
+                <div class="row mb-3">
+                    <div class="col-md-8">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Buscar por placa, marca, modelo, color...">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-primary me-2" type="button" id="searchBtn">
+                            <i class="fas fa-search"></i> Buscar
+                        </button>
+                        <button class="btn btn-outline-secondary" type="button" id="toggleAdvancedSearch">
+                            <i class="fas fa-filter"></i> Filtros Avanzados
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Búsqueda Avanzada (Inicialmente oculta) -->
+                <div id="advancedSearchPanel" class="row" style="display: none;">
+                    <div class="col-12">
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <h6 class="card-title mb-3"><i class="fas fa-sliders-h"></i> Filtros Avanzados</h6>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <label for="filterPlate" class="form-label">Placa</label>
+                                        <input type="text" class="form-control form-control-sm" id="filterPlate" placeholder="Ej: ABC123">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="filterType" class="form-label">Tipo de Vehículo</label>
+                                        <select class="form-select form-select-sm" id="filterType">
+                                            <option value="">Todos los tipos</option>
+                                            <option value="Automóvil">Automóvil</option>
+                                            <option value="Motocicleta">Motocicleta</option>
+                                            <option value="Camioneta">Camioneta</option>
+                                            <option value="Camión">Camión</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="filterBrand" class="form-label">Marca</label>
+                                        <input type="text" class="form-control form-control-sm" id="filterBrand" placeholder="Ej: Toyota">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="filterModel" class="form-label">Modelo</label>
+                                        <input type="text" class="form-control form-control-sm" id="filterModel" placeholder="Ej: Corolla">
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-md-3">
+                                        <label for="filterColor" class="form-label">Color</label>
+                                        <input type="text" class="form-control form-control-sm" id="filterColor" placeholder="Ej: Azul">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="filterZone" class="form-label">Zona</label>
+                                        <select class="form-select form-select-sm" id="filterZone">
+                                            <option value="">Todas las zonas</option>
+                                            <option value="A">Zona A</option>
+                                            <option value="B">Zona B</option>
+                                            <option value="C">Zona C</option>
+                                            <option value="VIP">Zona VIP</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="filterTimeFrom" class="form-label">Desde</label>
+                                        <input type="datetime-local" class="form-control form-control-sm" id="filterTimeFrom">
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="filterTimeUntil" class="form-label">Hasta</label>
+                                        <input type="datetime-local" class="form-control form-control-sm" id="filterTimeUntil">
+                                    </div>
+                                </div>
+                                <div class="row mt-3">
+                                    <div class="col-12">
+                                        <button class="btn btn-primary btn-sm me-2" id="applyAdvancedFilters">
+                                            <i class="fas fa-filter"></i> Aplicar Filtros
+                                        </button>
+                                        <button class="btn btn-secondary btn-sm" id="clearFilters">
+                                            <i class="fas fa-times"></i> Limpiar Filtros
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="card-body">
                 @if($activeEntries->count() > 0)
                 <div class="table-responsive">
-                    <table class="table table-striped">
+                    <table class="table table-striped" id="vehiclesTable">
                         <thead>
                             <tr>
                                 <th>Placa</th>
@@ -239,10 +329,7 @@
                                 <td>
                                     <span class="badge bg-secondary">{{ $entry->vehicle->tipoVehiculo->nombre ?? 'Desconocido' }}</span>
                                 </td>
-
-
-
-<td>{{ $entry->vehicle->marca?->nombre }} - {{ $entry->vehicle->model }}</td>
+                                <td>{{ $entry->vehicle->marca?->nombre }} - {{ $entry->vehicle->model }}</td>
                                 <td>{{ $entry->vehicle->color }}</td>
                                 <td>
                                     @if ($entry->espacio)
@@ -288,6 +375,156 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('searchInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const toggleAdvancedBtn = document.getElementById('toggleAdvancedSearch');
+    const advancedPanel = document.getElementById('advancedSearchPanel');
+    const applyFiltersBtn = document.getElementById('applyAdvancedFilters');
+    const clearFiltersBtn = document.getElementById('clearFilters');
+    const table = document.getElementById('vehiclesTable');
+    
+    // Toggle panel de búsqueda avanzada
+    toggleAdvancedBtn.addEventListener('click', function() {
+        if (advancedPanel.style.display === 'none') {
+            advancedPanel.style.display = 'block';
+            toggleAdvancedBtn.innerHTML = '<i class="fas fa-filter"></i> Ocultar Filtros';
+            toggleAdvancedBtn.classList.remove('btn-outline-secondary');
+            toggleAdvancedBtn.classList.add('btn-secondary');
+        } else {
+            advancedPanel.style.display = 'none';
+            toggleAdvancedBtn.innerHTML = '<i class="fas fa-filter"></i> Filtros Avanzados';
+            toggleAdvancedBtn.classList.remove('btn-secondary');
+            toggleAdvancedBtn.classList.add('btn-outline-secondary');
+        }
+    });
+    
+    // Búsqueda simple
+    function performSimpleSearch() {
+        const searchTerm = searchInput.value.toLowerCase();
+        filterTable(searchTerm);
+    }
+    
+    // Búsqueda avanzada
+    function performAdvancedSearch() {
+        const filters = {
+            plate: document.getElementById('filterPlate').value.toLowerCase(),
+            type: document.getElementById('filterType').value.toLowerCase(),
+            brand: document.getElementById('filterBrand').value.toLowerCase(),
+            model: document.getElementById('filterModel').value.toLowerCase(),
+            color: document.getElementById('filterColor').value.toLowerCase(),
+            zone: document.getElementById('filterZone').value.toLowerCase(),
+            timeFrom: document.getElementById('filterTimeFrom').value,
+            timeUntil: document.getElementById('filterTimeUntil').value
+        };
+        
+        filterTableAdvanced(filters);
+    }
+    
+    // Función de filtrado simple
+    function filterTable(searchTerm) {
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const cells = row.getElementsByTagName('td');
+            let found = false;
+            
+            // Buscar en todas las celdas
+            for (let j = 0; j < cells.length - 1; j++) { // -1 para excluir la columna de acciones
+                const cellText = cells[j].textContent || cells[j].innerText;
+                if (cellText.toLowerCase().includes(searchTerm)) {
+                    found = true;
+                    break;
+                }
+            }
+            
+            row.style.display = found || searchTerm === '' ? '' : 'none';
+        }
+    }
+    
+    // Función de filtrado avanzado
+    function filterTableAdvanced(filters) {
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            const cells = row.getElementsByTagName('td');
+            let show = true;
+            
+            // Filtrar por placa
+            if (filters.plate && !cells[0].textContent.toLowerCase().includes(filters.plate)) {
+                show = false;
+            }
+            
+            // Filtrar por tipo
+            if (filters.type && !cells[1].textContent.toLowerCase().includes(filters.type)) {
+                show = false;
+            }
+            
+            // Filtrar por marca/modelo
+            if (filters.brand && !cells[2].textContent.toLowerCase().includes(filters.brand)) {
+                show = false;
+            }
+            
+            if (filters.model && !cells[2].textContent.toLowerCase().includes(filters.model)) {
+                show = false;
+            }
+            
+            // Filtrar por color
+            if (filters.color && !cells[3].textContent.toLowerCase().includes(filters.color)) {
+                show = false;
+            }
+            
+            // Filtrar por zona
+            if (filters.zone && !cells[4].textContent.toLowerCase().includes(filters.zone)) {
+                show = false;
+            }
+            
+            // Aquí puedes agregar lógica para filtrar por fechas si es necesario
+            
+            row.style.display = show ? '' : 'none';
+        }
+    }
+    
+    // Limpiar filtros
+    function clearAllFilters() {
+        searchInput.value = '';
+        document.getElementById('filterPlate').value = '';
+        document.getElementById('filterType').value = '';
+        document.getElementById('filterBrand').value = '';
+        document.getElementById('filterModel').value = '';
+        document.getElementById('filterColor').value = '';
+        document.getElementById('filterZone').value = '';
+        document.getElementById('filterTimeFrom').value = '';
+        document.getElementById('filterTimeUntil').value = '';
+        
+        // Mostrar todas las filas
+        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+        for (let i = 0; i < rows.length; i++) {
+            rows[i].style.display = '';
+        }
+    }
+    
+    // Event listeners
+    searchBtn.addEventListener('click', performSimpleSearch);
+    searchInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            performSimpleSearch();
+        }
+    });
+    searchInput.addEventListener('input', function() {
+        if (this.value === '') {
+            clearAllFilters();
+        }
+    });
+    
+    applyFiltersBtn.addEventListener('click', performAdvancedSearch);
+    clearFiltersBtn.addEventListener('click', clearAllFilters);
+});
+</script>
 <!-- Modal para la factura -->
 <div class="modal fade" id="invoiceModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
@@ -562,7 +799,7 @@
                 $('.alert').fadeOut();
             }, 5000);
         }
-        
+
 
         $('#type').on('change', function() {
             const tipoVehiculoId = $(this).val();
@@ -596,9 +833,9 @@
     });
 </script>
 <script>
-    $(document).ready(function () {
+    $(document).ready(function() {
         // Manejar salida desde el botón de la tabla con confirmación
-        $(document).on('click', '.btn-exit-table', function () {
+        $(document).on('click', '.btn-exit-table', function() {
             const plate = $(this).data('plate');
             const button = $(this);
             const originalText = button.html();
@@ -607,7 +844,7 @@
             button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Procesando...');
 
             // Llamar a la API para obtener la imagen y datos del vehículo
-            $.get(`http://localhost:8000/api/vehicle/plate/generate?number=${plate}&region=bogotad`, function (data) {
+            $.get(`http://localhost:8000/api/vehicle/plate/generate?number=${plate}&region=bogotad`, function(data) {
                 console.log(data);
 
                 const plateImageUrl = data.image || `http://localhost:8000/api/vehicle/plate/generate?number=${plate}&region=bogotad`;
@@ -640,16 +877,16 @@
                                 _token: '{{ csrf_token() }}',
                                 plate: plate
                             },
-                            success: function (response) {
+                            success: function(response) {
                                 if (response.success) {
                                     // Mostrar resumen del costo
                                     showExitSummary(response.data);
-                                    
+
                                     // Imprimir factura automáticamente
                                     if (response.data.pdf_base64) {
                                         printInvoice(response.data.pdf_base64, response.data.filename);
                                     }
-                                    
+
                                     // Mostrar alerta de éxito
                                     showAlert('success', response.message);
 
@@ -659,7 +896,7 @@
                                     showAlert('danger', response.message);
                                 }
                             },
-                            error: function (xhr) {
+                            error: function(xhr) {
                                 const response = xhr.responseJSON;
                                 let message = 'Error al registrar salida';
 
@@ -671,7 +908,7 @@
 
                                 showAlert('danger', message);
                             },
-                            complete: function () {
+                            complete: function() {
                                 button.prop('disabled', false).html(originalText);
                             }
                         });
@@ -680,7 +917,7 @@
                         button.prop('disabled', false).html(originalText);
                     }
                 });
-            }).fail(function () {
+            }).fail(function() {
                 showAlert('danger', 'No se pudo obtener la información del vehículo.');
                 button.prop('disabled', false).html(originalText);
             });
@@ -749,7 +986,7 @@
                         </body>
                     </html>
                 `);
-                
+
                 // Esperar a que cargue y luego imprimir
                 pdfWindow.onload = function() {
                     setTimeout(() => {
@@ -759,7 +996,7 @@
 
                 // Método alternativo: Crear iframe oculto para imprimir
                 printPDFAlternative(pdfBase64);
-                
+
             } catch (error) {
                 console.error('Error al imprimir:', error);
                 // Fallback: descargar el PDF
@@ -773,9 +1010,9 @@
             const iframe = document.createElement('iframe');
             iframe.style.display = 'none';
             iframe.src = `data:application/pdf;base64,${pdfBase64}`;
-            
+
             document.body.appendChild(iframe);
-            
+
             iframe.onload = function() {
                 setTimeout(() => {
                     try {
@@ -825,7 +1062,9 @@
                 </div>
             `;
             $('.container').prepend(alertHtml);
-            setTimeout(() => { $('.alert').fadeOut(); }, 5000);
+            setTimeout(() => {
+                $('.alert').fadeOut();
+            }, 5000);
         }
 
         // Función adicional para imprimir factura desde botón específico
