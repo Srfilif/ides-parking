@@ -328,6 +328,8 @@
                                 <ul class="nav child_menu">
                                     <li><a href="{{ route('admin.index') ?? '#' }}">Panel Principal</a></li>
                                     <li><a href="{{ route('admin.roles.index') ?? '#' }}">Roles</a></li>
+                                    <li><a href="{{ route('marcas.index') ?? '#' }}">Marcas</a></li>
+
                                     <li><a href="{{ route('admin.usuarios.index') ?? '#' }}">Usuarios</a></li>
                                 </ul>
                             </li>

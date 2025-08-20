@@ -34,6 +34,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             CategoriaSeeder::class,
             TipoDocumentoSeeder::class,
+            MarcaSeeder::class,
+
             // ParkingSpaceSeeder::class,
             ZonaSeeder::class,
             EspaciosParqueaderoSeeder::class,
