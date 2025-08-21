@@ -1,7 +1,7 @@
 <div style="font-family: monospace; width: 320px; border:1px solid #000; padding:10px; text-align:center;">
 
     <!-- Logo centrado -->
-    <img src="{{ asset('images/logo.png') }}" alt="Logo Parqueadero" style="width:180px; height:auto; margin-bottom:15px;">
+    <img src="data:image/png;base64,{{ $logoBase64 }}" alt="Logo Parqueadero" style="width:180px; height:auto; margin-bottom:15px;">
 
     <!-- Información de la empresa -->
     <p style="font-size:10px; margin:0;">Nit. 901075548</p>

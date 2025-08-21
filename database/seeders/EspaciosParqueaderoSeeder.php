@@ -14,15 +14,24 @@ class EspaciosParqueaderoSeeder extends Seeder
      */
     public function run(): void
     {
-        $zonaGeneral = Zona::where('nombre', 'general')->first();
-        $tipoAuto = TipoVehiculo::where('codigo', 'AUTO')->first();
+       $zonaGeneral = Zona::firstOrCreate(
+    ['nombre' => 'general'],
+    ['descripcion' => 'Zona general de parqueo']
+);
 
-        for ($i = 1; $i <= 5; $i++) {
-            Espacios_parqueadero::create([
-                'numero_espacio' => 'A' . $i,
-                'zona_id' => $zonaGeneral->id,
-                'tipo_vehiculo_id' => $tipoAuto->id,
-            ]);
-        }
+
+
+
+$tipoAuto = TipoVehiculo::firstOrCreate(
+    ['codigo' => 'AUT'], // 3 letras
+    ['nombre' => 'Automóvil']
+);
+for ($i = 1; $i <= 5; $i++) {
+    Espacios_parqueadero::create([
+        'numero_espacio' => 'A' . $i,
+        'zona_id' => $zonaGeneral->id,
+        'tipo_vehiculo_id' => $tipoAuto->id,
+    ]);
+}
     }
 }
