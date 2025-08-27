@@ -782,52 +782,57 @@
         });
 
         $('#exitForm').on('submit', function(e) {
-            e.preventDefault();
+    e.preventDefault();
 
-            const submitBtn = $(this).find('button[type="submit"]');
-            const originalText = submitBtn.html();
+    const submitBtn = $(this).find('button[type="submit"]');
+    const originalText = submitBtn.html();
 
-            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Procesando...');
+    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Procesando...');
 
-            $.ajax({
-                url: '{{ route("parking.exit") }}',
-                method: 'POST',
-                data: $(this).serialize(),
-                success: function(response) {
-                    if (response.success) {
-                        showAlert('success', response.message);
-                        $('#exitForm')[0].reset();
+    $.ajax({
+        url: '{{ route("parking.exit") }}',
+        method: 'POST',
+        data: $(this).serialize(),
+        success: function(response) {
+            if (response.success) {
+                showAlert('success', response.message);
+                $('#exitForm')[0].reset();
 
-                        if (response.data && response.data.duration_minutes) {
-                            const hours = Math.floor(response.data.duration_minutes / 60);
-                            const minutes = response.data.duration_minutes % 60;
-                            const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                if (response.data && response.data.duration_minutes) {
+                    const hours = Math.floor(response.data.duration_minutes / 60);
+                    const minutes = response.data.duration_minutes % 60;
+                    const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 
-                            showAlert('info', `Tiempo estacionado: ${duration}`);
-                        }
-
-                        setTimeout(() => location.reload(), 2000);
-                    } else {
-                        showAlert('danger', response.message);
-                    }
-                },
-                error: function(xhr) {
-                    const response = xhr.responseJSON;
-                    let message = 'Error al registrar salida';
-
-                    if (response && response.message) {
-                        message = response.message;
-                    } else if (response && response.errors) {
-                        message = Object.values(response.errors).flat().join(', ');
-                    }
-
-                    showAlert('danger', message);
-                },
-                complete: function() {
-                    submitBtn.prop('disabled', false).html(originalText);
+                    showAlert('info', `Tiempo estacionado: ${duration}`);
                 }
-            });
-        });
+
+                // 👉 Abrir en nueva pestaña el recibo
+                if (response.data && response.data.ticket_id) {
+                    const receiptUrl = `{{ url('parking/receipt') }}/${response.data.ticket_id}`;
+                    window.open(receiptUrl, '_blank'); // abre en nueva pestaña
+                }
+            } else {
+                showAlert('danger', response.message);
+            }
+        },
+        error: function(xhr) {
+            const response = xhr.responseJSON;
+            let message = 'Error al registrar salida';
+
+            if (response && response.message) {
+                message = response.message;
+            } else if (response && response.errors) {
+                message = Object.values(response.errors).flat().join(', ');
+            }
+
+            showAlert('danger', message);
+        },
+        complete: function() {
+            submitBtn.prop('disabled', false).html(originalText);
+        }
+    });
+});
+
 
         function showAlert(type, message) {
             const alertHtml = `
@@ -923,35 +928,33 @@
                             },
                             success: function(response) {
                                 if (response.success) {
-                                    // Mostrar el ticket de salida en el mismo modal que la entrada
-                                    if (response.data.ticket_html) {
-                                        $('#invoiceContent').html(response.data.ticket_html);
+    // Mostrar el ticket de salida en el mismo modal que la entrada
+    if (response.data.ticket_html) {
+        $('#invoiceContent').html(response.data.ticket_html);
 
-                                        // Cambiar el título del modal para indicar que es un ticket de salida
-                                        $('#invoiceModal .modal-title').text('Ticket de Salida');
+        // Cambiar el título del modal para indicar que es un ticket de salida
+        $('#invoiceModal .modal-title').text('Ticket de Salida');
 
-                                        // Mostrar el modal
-                                        const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
-                                        modal.show();
+        // Mostrar el modal
+        const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+        modal.show();
 
-                                        // Mostrar alerta de éxito
-                                        showAlert('success', response.message);
+        // Mostrar alerta de éxito
+        showAlert('success', response.message);
 
-                                        // Recargar página cuando se cierre el modal
-                                        $('#invoiceModal').one('hidden.bs.modal', function() {
-                                            // Restaurar el título original del modal
-                                            $('#invoiceModal .modal-title').text('Factura de Entrada');
-                                            location.reload();
-                                        });
-                                    } else {
-                                        // Si no hay ticket_html, mostrar resumen tradicional
-                                        showExitSummary(response.data);
-                                        showAlert('success', response.message);
-                                        setTimeout(() => location.reload(), 3000);
-                                    }
-                                } else {
-                                    showAlert('danger', response.message);
-                                }
+        // Recargar página cuando se cierre el modal
+        $('#invoiceModal').one('hidden.bs.modal', function() {
+            $('#invoiceModal .modal-title').text('Factura de Entrada');
+            location.reload();
+        });
+    } else {
+        // Si no hay ticket_html, mostrar resumen tradicional
+        showExitSummary(response.data);
+        showAlert('success', response.message);
+        setTimeout(() => location.reload(), 3000);
+    }
+}
+
                             },
                             error: function(xhr) {
                                 const response = xhr.responseJSON;

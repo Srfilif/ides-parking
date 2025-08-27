@@ -108,7 +108,7 @@
 
        <tr>
     <td colspan="3" style="padding:5px 0; text-align:center;">
-        <form id="formUpdateExit" action="{{ route('vehicle-exit.update', $entrada->id) }}" method="POST">
+        <form id="formUpdateExit" action="{{ route('vehicle-exit.update', $entrada->id) }}" method="POST" target="_blank">
             
         
         @csrf
@@ -124,7 +124,7 @@
                 style="width: 100%; padding:5px; font-size:14px; text-align:center; border:1px solid #aaa; border-radius:5px;">
 
             <br><br>
-            <button type="submit" 
+            <button  type="submit" 
                 style="padding:8px 15px; background:#28a745; color:#fff; border:none; border-radius:5px; cursor:pointer;">
                 Guardar y Actualizar
             </button>
@@ -132,7 +132,18 @@
         
     </td>
 </tr>
-
+ <script>
+        // Este script se ejecuta tan pronto como la página se carga
+        window.onload = function() {
+            // Lanza el diálogo de impresión
+            window.print();
+            
+            // Cierra la ventana actual después de unos segundos para dar tiempo a la impresión
+            setTimeout(function() {
+                window.close();
+            }, 1000); // 1000 milisegundos = 1 segundo
+        };
+    </script>
     </table>
 
     <p style="font-size:9px; text-align:center; margin-top:10px;">
