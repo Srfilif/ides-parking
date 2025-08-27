@@ -45,7 +45,12 @@ class VehicleEntryController extends Controller
             'espaciosDisponibles',
             'marcas'
         ));
+    
+
+        return view('parking.dashboard', compact('activeEntries', 'availableSpaces', 'totalSpaces', 'tipos', 'espaciosDisponibles', 'marcas'));
     }
+
+    
 
     /**
      * Registrar entrada de vehículo
@@ -320,10 +325,13 @@ class VehicleEntryController extends Controller
                     'qr' => $qr
                 ];
 
+                // Generar HTML y PDF
                 $ticketHtml = view('parking.exit-ticket', $ticketData)->render();
                 $pdf = Pdf::loadView('parking.exit-ticket', $ticketData)->setPaper('A4', 'portrait');
 
-                $pdfBase64 = base64_encode($pdf->output());
+                // Codificar PDF en base64 para retornarlo en JSON
+                $pdfContent = $pdf->output();
+                $pdfBase64 = base64_encode($pdfContent);
 
                 return response()->json([
                     'success' => true,
@@ -373,6 +381,7 @@ class VehicleEntryController extends Controller
                 ], 400);
             }
 
+             // Recalcular datos si es necesario
             $durationMinutes = $entry->entry_time->diffInMinutes($entry->exit_time);
             $durationHours = ceil($durationMinutes / 60);
             $durationDays = $entry->entry_time->diffInDays($entry->exit_time);
@@ -392,6 +401,7 @@ class VehicleEntryController extends Controller
 
             $plateFormatted = preg_replace('/^([A-Za-z]+)(\d+)$/', '$1-$2', $entry->vehicle->plate);
             $marcaNombre = $entry->vehicle->marca?->nombre ?? 'N/A';
+
 
             $qrData = "RECIBO DE SALIDA\n";
             $qrData .= "Placa: {$plateFormatted}\n";
@@ -542,24 +552,87 @@ class VehicleEntryController extends Controller
      */
     public function invoiceHtml($id)
     {
-        $entrada = VehicleEntry::with(['vehicle.tipoVehiculo', 'espacio.zona', 'vehicle.marca'])
-            ->findOrFail($id);
 
+        $entrada = VehicleEntry::with(['vehicle.tipoVehiculo', 'espacio.zona', 'vehicle.marca'])->findOrFail($id);
+
+        // Generar QR
         $plateFormatted = $entrada->vehicle?->plate
             ? preg_replace('/^([A-Za-z]+)(\d+)$/', '$1-$2', $entrada->vehicle->plate)
             : 'N/A';
 
+        // Obtener el nombre de la marca desde la relación
         $marcaNombre = $entrada->vehicle?->marca?->nombre ?? 'N/A';
 
-        $qrData = "Placa: {$plateFormatted}\n";
+        $qrData  = "Placa: {$plateFormatted}\n";
         $qrData .= "Tipo: " . ($entrada->vehicle?->tipoVehiculo?->nombre ?? 'N/A') . "\n";
         $qrData .= "Marca/Modelo: {$marcaNombre} " . ($entrada->vehicle?->model ?? 'N/A') . "\n";
         $qrData .= "Fecha - Hora Entrada: " . ($entrada->entry_time?->format('Y-m-d H:i:s') ?? 'N/A');
 
         $qr = base64_encode(
-            QrCode::format('png')->size(150)->generate($qrData)
+            \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
+                ->size(150)
+                ->generate($qrData)
         );
 
         return view('parking.ticket', compact('entrada', 'qr'));
     }
+    public function printReceipt($id)
+    {
+        $entry = VehicleEntry::with(['vehicle', 'espacio', 'vehicle.tipoVehiculo'])->findOrFail($id);
+        return view('parking.receipt', compact('entry'));
+    }
+
+
+
+public function salida($id)
+{
+    $entrada = VehicleEntry::with('vehicle.tipoVehiculo', 'vehicle.marca', 'espacio.zona')
+        ->findOrFail($id);
+
+    if (!$entrada->exit_time) {
+        return response()->json([
+            'success' => false,
+            'message' => 'La salida aún no ha sido registrada.'
+        ], 400);
+    }
+
+    // Tiempos y duración
+    $exitTime = $entrada->exit_time;
+    $entryTime = $entrada->entry_time;
+    $durationMinutes = $entryTime->diffInMinutes($exitTime);
+    $durationHours = ceil($durationMinutes / 60);
+    $durationDays = $entryTime->diffInDays($exitTime);
+
+    // Costo y tarifa
+    $costoTotal = $entrada->costo_total ?? 0;
+    $tarifaAplicada = $entrada->tarifa_aplicada ?? 'No disponible';
+
+    // Generar QR
+    $plateFormatted = $entrada->vehicle?->plate
+        ? preg_replace('/^([A-Za-z]+)(\d+)$/', '$1-$2', $entrada->vehicle->plate)
+        : 'N/A';
+
+    $marcaNombre = $entrada->vehicle?->marca?->nombre ?? 'N/A';
+    $modeloNombre = $entrada->vehicle?->model ?? 'N/A';
+
+    $qrData  = "TICKET DE SALIDA\n";
+    $qrData .= "Placa: {$plateFormatted}\n";
+    $qrData .= "Tipo: " . ($entrada->vehicle?->tipoVehiculo?->nombre ?? 'N/A') . "\n";
+    $qrData .= "Marca/Modelo: {$marcaNombre} {$modeloNombre}\n";
+    $qrData .= "Entrada: " . ($entryTime->format('d/m/Y H:i')) . "\n";
+    $qrData .= "Salida: " . ($exitTime->format('d/m/Y H:i')) . "\n";
+    $qrData .= "Total: $" . number_format($costoTotal, 0);
+
+       $qr = base64_encode(
+        \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
+            ->size(150)
+            ->generate($qrData)
+    );
+
+    return view('parking.partials.factura_salida', compact(
+        'entrada', 'exitTime', 'durationMinutes', 'durationHours', 'durationDays', 'costoTotal', 'tarifaAplicada', 'qr'
+    ));
+}
+
+
 }

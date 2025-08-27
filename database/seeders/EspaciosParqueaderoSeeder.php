@@ -11,6 +11,7 @@ class EspaciosParqueaderoSeeder extends Seeder
 {
     public function run()
     {
+
         // Obtener tipos de vehículo (nombres como los tienes: "carro", "moto")
         $tipoCarro = TipoVehiculo::whereRaw('LOWER(nombre) LIKE ?', ['car%'])->firstOrFail();
         $tipoMoto  = TipoVehiculo::whereRaw('LOWER(nombre) LIKE ?', ['moto%'])->firstOrFail();
@@ -42,5 +43,26 @@ class EspaciosParqueaderoSeeder extends Seeder
                 ]
             );
         }
+
+       $zonaGeneral = Zona::firstOrCreate(
+    ['nombre' => 'general'],
+    ['descripcion' => 'Zona general de parqueo']
+);
+
+
+
+
+$tipoAuto = TipoVehiculo::firstOrCreate(
+    ['codigo' => 'AUT'], // 3 letras
+    ['nombre' => 'Automóvil']
+);
+for ($i = 1; $i <= 5; $i++) {
+    Espacios_parqueadero::create([
+        'numero_espacio' => 'A' . $i,
+        'zona_id' => $zonaGeneral->id,
+        'tipo_vehiculo_id' => $tipoAuto->id,
+    ]);
+}
+
     }
 }
