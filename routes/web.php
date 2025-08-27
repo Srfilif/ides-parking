@@ -19,6 +19,7 @@ use App\Http\Controllers\CompatibilidadController;
 use App\Http\Controllers\TarifaController;
 
 
+
 // Rutas existentes...
 
 // Ruta para registrar salida con PDF
@@ -32,6 +33,7 @@ Route::get('/parking/exit-receipt/{id}/pdf', [VehicleEntryController::class, 'ge
 // Ruta para mostrar recibo de salida en HTML (opcional)
 Route::get('/parking/exit-receipt/{id}', [VehicleEntryController::class, 'showExitReceipt'])
     ->name('parking.exit-receipt.show');
+
 use App\Http\Controllers\MarcaController;
 
 Route::get('/api/vehicle/plate/generate', [VehicleController::class, 'generatePlate']);
@@ -132,19 +134,25 @@ Route::middleware(['auth'])->group(function () {
 
     // Rutas para entradas de Compatibilidad
     Route::resource('compatibilidades', CompatibilidadController::class)->parameters([
-    'compatibilidades' => 'compatibilidad'
-]);
+        'compatibilidades' => 'compatibilidad'
+    ]);
 
 
     // Rutas para entradas de tarifas
     Route::resource('tarifas', TarifaController::class);
 
-    
 
-Route::get('/espacios-disponibles/{tipoVehiculoId}', [App\Http\Controllers\VehicleEntryController::class, 'espaciosDisponibles']);
 
-// Factura QR
-Route::get('/factura-html/{id}', [VehicleEntryController::class, 'invoiceHtml']);
+    Route::get('/espacios-disponibles/{tipoVehiculoId}', [App\Http\Controllers\VehicleEntryController::class, 'espaciosDisponibles']);
+
+    // Factura QR
+    Route::get('/factura-html/{id}', [VehicleEntryController::class, 'invoiceHtml']);
+
+    //
+    // ruta actualizar costo manual
+    Route::put('/vehicle-exit/{id}', [VehicleEntryController::class, 'updateExit'])->name('vehicle-exit.update');
+
+
 
     Route::middleware(['auth'])->group(function () {
         Route::resource('tipo_vehiculos', TipoVehiculoWebController::class);

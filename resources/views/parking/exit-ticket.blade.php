@@ -16,11 +16,11 @@
     </p>
 
     <table style="width:100%; font-size:12px; border-collapse: collapse; text-align:center;">
-        
+
         <p style="font-size:15px; margin:5px 0;">
             <strong>Recibo Nº:</strong> <strong>{{ str_pad($entrada->id ?? 0, 4, '0', STR_PAD_LEFT) }}</strong>
         </p>
-        
+
         <!-- Información de entrada -->
         <tr>
             <td colspan="3" style="font-weight:bold; padding:5px 0; border-bottom:1px solid #ccc;">
@@ -34,7 +34,7 @@
         </tr>
         <tr>
             <td colspan="3">
-                <strong>No. Placa Vehículo:</strong> 
+                <strong>No. Placa Vehículo:</strong>
                 {{ $entrada->vehicle?->plate ? substr($entrada->vehicle->plate, 0, 3) . '-' . substr($entrada->vehicle->plate, 3) : 'N/A' }}
             </td>
         </tr>
@@ -48,7 +48,7 @@
                 <strong>Llaves:</strong> {{ $entrada->llaves ? '✔' : '☐' }} &nbsp;&nbsp;
                 <strong>Otro:</strong> {{ $entrada->otro ? '✔' : '☐' }}
                 @if($entrada->otro && $entrada->otro_texto)
-                    ({{ $entrada->otro_texto }})
+                ({{ $entrada->otro_texto }})
                 @endif
             </td>
         </tr>
@@ -67,15 +67,15 @@
         <tr>
             <td colspan="3"><strong>Hora De Salida:</strong> {{ $exitTime->format('g:i A') }}</td>
         </tr>
-        
+
         <!-- Duración y costo -->
         <tr>
             <td colspan="3" style="padding:5px 0;">
-                <strong>Tiempo Total:</strong> 
+                <strong>Tiempo Total:</strong>
                 @if($durationDays > 0)
-                    {{ $durationDays }} día(s), 
+                {{ $durationDays }} día(s),
                 @endif
-                {{ $durationHours }} hora(s) ({{ $durationMinutes }} min)
+                {{ $durationHours }} hora(s) ({{ $remainingMinutes }} min)
             </td>
         </tr>
         <tr>
@@ -83,11 +83,56 @@
                 <strong>{{ $tarifaAplicada }}</strong>
             </td>
         </tr>
+        <!-- <tr>
+            <td colspan="3" style="font-size:16px; font-weight:bold; padding:5px 0; color:#d32f2f;">
+                <strong>TOTAL A PAGAR: ${{ number_format($costoTotal, 0) }}</strong>
+            </td>
+        </tr> -->
+
+        @if($entrada->vehicle?->is_mensualidad)
+        <tr>
+            <td colspan="3" style="padding:5px 0;">
+                <strong>Mensualidad:</strong>
+                {{ $entrada->vehicle?->mensualidad_inicio ? $entrada->vehicle->mensualidad_inicio->format('d/m/Y') : '-' }}
+                hasta
+                {{ $entrada->vehicle?->mensualidad_fin ? $entrada->vehicle->mensualidad_fin->format('d/m/Y') : '-' }}
+            </td>
+        </tr>
+        @endif
+
         <tr>
             <td colspan="3" style="font-size:16px; font-weight:bold; padding:5px 0; color:#d32f2f;">
                 <strong>TOTAL A PAGAR: ${{ number_format($costoTotal, 0) }}</strong>
             </td>
         </tr>
+
+       <tr>
+    <td colspan="3" style="padding:5px 0; text-align:center;">
+        <form id="formUpdateExit" action="{{ route('vehicle-exit.update', $entrada->id) }}" method="POST">
+            
+        
+        @csrf
+            @method('PUT')
+
+            <label for="costo_manual" style="font-size:12px; font-weight:bold;">
+                Ingresar Costo Manual:
+            </label><br>
+
+            <input type="number" id="costo_manual" name="costo_manual"
+                placeholder="Escriba el valor"
+                value="{{ old('costo_manual', $entrada->costo_total) }}"
+                style="width: 100%; padding:5px; font-size:14px; text-align:center; border:1px solid #aaa; border-radius:5px;">
+
+            <br><br>
+            <button type="submit" 
+                style="padding:8px 15px; background:#28a745; color:#fff; border:none; border-radius:5px; cursor:pointer;">
+                Guardar y Actualizar
+            </button>
+        </form>
+        
+    </td>
+</tr>
+
     </table>
 
     <p style="font-size:9px; text-align:center; margin-top:10px;">
@@ -103,3 +148,5 @@
     </p>
 
 </div>
+
+

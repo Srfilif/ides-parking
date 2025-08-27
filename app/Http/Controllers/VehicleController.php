@@ -47,6 +47,38 @@ class VehicleController extends Controller
         return response()->json($vehicle, 201);
     }
 
+    public function update(Request $request, Vehicle $vehicle)
+{
+    $request->validate([
+        'plate' => ['required', 'string', 'regex:/^[A-Z]{3}[0-9]{2}[0-9A-Z]$/', 'unique:vehicles,plate,' . $vehicle->id],
+        'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
+        'brand' => 'nullable|string|max:50',
+        'model' => 'nullable|string|max:50',
+        'color' => 'nullable|string|max:30',
+        'owner_id' => 'nullable|exists:users,id',
+
+        'is_mensualidad' => 'nullable|boolean',
+        'mensualidad_inicio' => 'nullable|date',
+        'mensualidad_fin' => 'nullable|date|after_or_equal:mensualidad_inicio',
+    ]);
+
+    $vehicle->update([
+        'plate' => $request->plate,
+        'tipo_vehiculo_id' => $request->tipo_vehiculo_id,
+        'brand' => $request->brand,
+        'model' => $request->model,
+        'color' => $request->color,
+        'owner_id' => $request->owner_id,
+
+        'is_mensualidad' => $request->has('is_mensualidad'),
+        'mensualidad_inicio' => $request->mensualidad_inicio,
+        'mensualidad_fin' => $request->mensualidad_fin,
+    ]);
+
+    return redirect()->route('vehicles.index')->with('success', 'Vehículo actualizado correctamente.');
+}
+
+
     public function generatePlate(Request $request)
     {
         $number = strtoupper($request->query('number', 'AAA000'));

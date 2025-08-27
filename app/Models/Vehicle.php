@@ -18,11 +18,18 @@ class Vehicle extends Model
         'model',
         'color',
         'owner_id',
-        'is_active'
+        'is_active',
+        'is_mensualidad',
+        'mensualidad_inicio',
+        'mensualidad_fin',
+
     ];
 
     protected $casts = [
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
+        'is_mensualidad' => 'boolean',
+        'mensualidad_inicio' => 'datetime',
+        'mensualidad_fin' => 'datetime',
     ];
 
     public function owner(): BelongsTo
@@ -51,8 +58,16 @@ class Vehicle extends Model
         return $this->belongsTo(TipoVehiculo::class, 'tipo_vehiculo_id');
     }
     public function marca()
-{
-    return $this->belongsTo(Marca::class, 'brand'); // 'brand' es la columna que guarda el marca_id
-}
+    {
+        return $this->belongsTo(Marca::class, 'brand'); // 'brand' es la columna que guarda el marca_id
+    }
 
+    public function tieneMensualidadActiva(): bool
+    {
+        if (!$this->is_mensualidad) {
+            return false;
+        }
+
+        return now()->between($this->mensualidad_inicio, $this->mensualidad_fin);
+    }
 }

@@ -18,19 +18,22 @@ class VehicleEntry extends Model
         'exit_time',
         'ticket_code',
         'casco',
-    'chaleco',
-    'llaves',
-    'otro',
-    'otro_texto',
+        'chaleco',
+        'llaves',
+        'otro',
+        'otro_texto',
+        'duracion_minutos',
+        'costo_total',
+        'tarifa_aplicada',
     ];
 
     protected $casts = [
         'entry_time' => 'datetime',
         'exit_time' => 'datetime',
         'casco' => 'boolean',
-    'chaleco' => 'boolean',
-    'llaves' => 'boolean',
-    'otro' => 'boolean',
+        'chaleco' => 'boolean',
+        'llaves' => 'boolean',
+        'otro' => 'boolean',
     ];
 
     public function vehicle(): BelongsTo
@@ -43,12 +46,12 @@ class VehicleEntry extends Model
     //     return $this->belongsTo(ParkingSpace::class);
     // }
 
-public function espacio(): BelongsTo
-{
-    return $this->belongsTo(Espacios_parqueadero::class, 'espacio_id');
-}
+    public function espacio(): BelongsTo
+    {
+        return $this->belongsTo(Espacios_parqueadero::class, 'espacio_id');
+    }
 
- public function isActive()
+    public function isActive()
     {
         return is_null($this->exit_time);
     }
@@ -61,7 +64,7 @@ public function espacio(): BelongsTo
         if (!$this->exit_time) {
             return $this->entry_time->diffInMinutes(Carbon::now());
         }
-        
+
         return $this->entry_time->diffInMinutes($this->exit_time);
     }
     /**
@@ -80,7 +83,7 @@ public function espacio(): BelongsTo
         if (!$this->exit_time) {
             return $this->entry_time->diffInDays(Carbon::now());
         }
-        
+
         return $this->entry_time->diffInDays($this->exit_time);
     }
 
@@ -98,5 +101,10 @@ public function espacio(): BelongsTo
     public function scopeCompleted($query)
     {
         return $query->whereNotNull('exit_time');
+    }
+
+    public function esMensualidad()
+    {
+        return $this->tarifa_aplicada && str_contains($this->tarifa_aplicada, 'Mensualidad');
     }
 }

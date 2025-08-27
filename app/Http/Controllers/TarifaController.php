@@ -27,18 +27,21 @@ class TarifaController extends Controller
         $request->validate([
             'zona_id' => 'required|exists:zonas,id',
             'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
-            'precio_hora' => 'nullable',
-            'precio_dia' => 'nullable',
+            'fraccion_hora' => 'nullable|string',
+            'hora_adicional' => 'nullable|string',
+            'media_jornada' => 'nullable|string',
+            'jornada_completa' => 'nullable|string',
+            'mensualidad_diurna' => 'nullable|string',
         ]);
 
         // Convertir los precios al formato numérico válido para Laravel
         $data = $request->all();
-        $data['precio_hora'] = $data['precio_hora'] !== null
-            ? str_replace(['.', ','], ['', '.'], $data['precio_hora'])
-            : null;
-        $data['precio_dia'] = $data['precio_dia'] !== null
-            ? str_replace(['.', ','], ['', '.'], $data['precio_dia'])
-            : null;
+
+        $data['fraccion_hora']      = $this->parseCurrency($data['fraccion_hora'] ?? null);
+        $data['hora_adicional']     = $this->parseCurrency($data['hora_adicional'] ?? null);
+        $data['media_jornada']      = $this->parseCurrency($data['media_jornada'] ?? null);
+        $data['jornada_completa']   = $this->parseCurrency($data['jornada_completa'] ?? null);
+        $data['mensualidad_diurna'] = $this->parseCurrency($data['mensualidad_diurna'] ?? null);
 
         $existe = Tarifa::where('zona_id', $data['zona_id'])
             ->where('tipo_vehiculo_id', $data['tipo_vehiculo_id'])
@@ -48,12 +51,7 @@ class TarifaController extends Controller
             return back()->withErrors(['duplicado' => 'Ya existe esta tarifa.'])->withInput();
         }
 
-        Tarifa::create([
-            'zona_id' => $data['zona_id'],
-            'tipo_vehiculo_id' => $data['tipo_vehiculo_id'],
-            'precio_hora' => $data['precio_hora'],
-            'precio_dia' => $data['precio_dia'],
-        ]);
+        Tarifa::create($data);
 
         return redirect()->route('tarifas.index')->with('success', 'Tarifa creada correctamente.');
     }
@@ -71,28 +69,37 @@ class TarifaController extends Controller
         $request->validate([
             'zona_id' => 'required|exists:zonas,id',
             'tipo_vehiculo_id' => 'required|exists:tipo_vehiculos,id',
-            'precio_hora' => 'nullable',
-            'precio_dia' => 'nullable',
+            'fraccion_hora' => 'nullable|string',
+            'hora_adicional' => 'nullable|string',
+            'media_jornada' => 'nullable|string',
+            'jornada_completa' => 'nullable|string',
+            'mensualidad_diurna' => 'nullable|string',
         ]);
 
         $data = $request->all();
-        $data['precio_hora'] = $data['precio_hora'] !== null
-            ? str_replace(['.', ','], ['', '.'], $data['precio_hora'])
-            : null;
-        $data['precio_dia'] = $data['precio_dia'] !== null
-            ? str_replace(['.', ','], ['', '.'], $data['precio_dia'])
-            : null;
 
-        $tarifa->update([
-            'zona_id' => $data['zona_id'],
-            'tipo_vehiculo_id' => $data['tipo_vehiculo_id'],
-            'precio_hora' => $data['precio_hora'],
-            'precio_dia' => $data['precio_dia'],
-        ]);
+
+        $data['fraccion_hora']     = $this->parseCurrency($data['fraccion_hora']);
+        $data['hora_adicional']    = $this->parseCurrency($data['hora_adicional']);
+        $data['media_jornada']     = $this->parseCurrency($data['media_jornada']);
+        $data['jornada_completa']  = $this->parseCurrency($data['jornada_completa']);
+        $data['mensualidad_diurna'] = $this->parseCurrency($data['mensualidad_diurna']);
+
+        $tarifa->update($data);
 
         return redirect()->route('tarifas.index')->with('success', 'Tarifa actualizada.');
     }
 
+
+    private function parseCurrency($value)
+    {
+        if ($value === null) return null;
+
+        // quita todo lo que no sea número
+        $number = preg_replace('/[^\d]/', '', $value);
+
+        return $number === '' ? null : (int) $number;
+    }
 
     public function destroy(Tarifa $tarifa)
     {
