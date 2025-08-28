@@ -1,7 +1,14 @@
+@php
+    $path = public_path('images/logo.png'); 
+    $logoBase64 = base64_encode(file_get_contents($path));
+@endphp
+
 <div style="font-family: monospace; width: 320px; border:1px solid #000; padding:10px; text-align:center;">
 
-    <!-- Logo centrado -->
-    <img src="{{ url('images/logo.png') }}" alt="Logo Parqueadero" style="width:180px; height:auto;">
+    <!-- Logo centrado en base64 con espacio debajo -->
+    <img src="data:image/png;base64,{{ $logoBase64 }}" 
+         alt="Logo Parqueadero" 
+         style="width:180px; height:auto; margin-bottom:10px;">
 
     <p style="font-size:10px; margin:0;">Nit. 901075548</p>
     <p style="font-size:10px; margin:0;">Calle 11 No 7-98</p>

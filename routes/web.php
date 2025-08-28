@@ -37,7 +37,7 @@ Route::get('/parking/exit-receipt/{id}', [VehicleEntryController::class, 'showEx
 use App\Http\Controllers\MarcaController;
 
 Route::get('/api/vehicle/plate/generate', [VehicleController::class, 'generatePlate']);
-
+Route::get('/api/vehicle/data/{id}', [VehicleController::class, 'datavehicle']);
 // ... otras rutas
 Route::resource('marcas', MarcaController::class);
 Route::post('/notificaciones/leidas', function () {

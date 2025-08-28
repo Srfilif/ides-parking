@@ -51,9 +51,16 @@
             </td>
         </tr>
         <tr>
-            <td colspan="3" style="font-size:16px; font-weight:bold; padding:5px 0; color:#d32f2f;">
-                TOTAL A PAGAR: ${{ number_format($costoTotal, 0) }}
-            </td>
+           <td colspan="3" style="padding:10px 0;">
+        <div style="text-align:center; 
+                    font-size:16px; 
+                    font-weight:bold; 
+                    color:#000; 
+                    border:1px dotted #999; 
+                    padding:8px; 
+                    display:inline-block;">
+           TOTAL A PAGAR: {{ number_format($costoTotal, 0) }} $
+        </div>
         </tr>
 
     </table>

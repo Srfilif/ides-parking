@@ -820,11 +820,11 @@ $(document).ready(function() {
         button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Procesando...');
 
         // Llamar a la API para obtener la imagen y datos del vehículo
-        $.get(`http://localhost:8000/api/vehicle/plate/generate?number=${plate}&region=bogotad`, function(data) {
+        $.get(`http://localhost:8000/api/vehicle/data/${plate}`, function(data) {
             console.log(data);
 
-            const plateImageUrl = data.image || `http://localhost:8000/api/vehicle/plate/generate?number=${plate}&region=bogotad`;
-            const vehicleBrand = data.brand || 'Marca desconocida';
+            const plateImageUrl = data.image || `http://localhost:8000/api/vehicle/plate/generate?number=${plate}`;
+            const vehicleBrand = data.brand || 'http://localhost:8000/api/vehicle/data?id=${plate}';
             const vehicleModel = data.model || 'Modelo desconocido';
             const vehicleType = data.type || 'Tipo desconocido';
 
