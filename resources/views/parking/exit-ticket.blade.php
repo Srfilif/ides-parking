@@ -17,7 +17,14 @@
             <strong>Recibo Nº:</strong>  <strong>{{ str_pad($entrada->id ?? 0, 4, '0', STR_PAD_LEFT) }}</strong>
         </p>
 
-        {{-- Día, Mes, Año --}}
+
+        <!-- Información de entrada -->
+        <tr>
+            <td colspan="3" style="font-weight:bold; padding:5px 0; border-bottom:1px solid #ccc;">
+                DATOS DE ENTRADA
+            </td>
+        </tr>
+
         <tr>
             <td><strong>Día:</strong> {{ $exitTime->format('d') }}</td>
             <td><strong>Mes:</strong> {{ $exitTime->format('m') }}</td>
@@ -27,22 +34,42 @@
         {{-- Placa --}}
         <tr>
             <td colspan="3">
-                <strong>No. Placa Vehículo:</strong> 
+                <strong>No. Placa Vehículo:</strong>
                 {{ $entrada->vehicle?->plate ? substr($entrada->vehicle->plate, 0, 3) . '-' . substr($entrada->vehicle->plate, 3) : 'N/A' }}
             </td>
         </tr>
+
+        <tr>
+            <td colspan="3"><strong>Hora De Ingreso:</strong> {{ $entrada->entry_time?->format('g:i A') ?? 'N/A' }}</td>
+        </tr>
+        <tr>
+            <td colspan="3">
+                <strong>Casco:</strong> {{ $entrada->casco ? '✔' : '☐' }} &nbsp;&nbsp;
+                <strong>Chaleco:</strong> {{ $entrada->chaleco ? '✔' : '☐' }} &nbsp;&nbsp;
+                <strong>Llaves:</strong> {{ $entrada->llaves ? '✔' : '☐' }} &nbsp;&nbsp;
+                <strong>Otro:</strong> {{ $entrada->otro ? '✔' : '☐' }}
+                @if($entrada->otro && $entrada->otro_texto)
+                ({{ $entrada->otro_texto }})
+                @endif
+            </td>
+        </tr>
+
 
         {{-- Hora de salida --}}
         <tr>
             <td colspan="3"><strong>Hora De Salida:</strong> {{ $exitTime->format('g:i A') }}</td>
         </tr>
 
-        {{-- Tiempo total y costos --}}
+
+        <!-- Duración y costo -->
         <tr>
             <td colspan="3" style="padding:5px 0;">
-                <strong>Tiempo Total:</strong> 
-                @if($durationDays > 0) {{ $durationDays }} día(s), @endif
-                {{ $durationHours }} hora(s) ({{ $durationMinutes }} min)
+                <strong>Tiempo Total:</strong>
+                @if($durationDays > 0)
+                {{ $durationDays }} día(s),
+                @endif
+                {{ $durationHours }} hora(s) ({{ $remainingMinutes }} min)
+
             </td>
         </tr>
         <tr>
@@ -50,6 +77,23 @@
                 <strong>{{ $tarifaAplicada }}</strong>
             </td>
         </tr>
+        <!-- <tr>
+            <td colspan="3" style="font-size:16px; font-weight:bold; padding:5px 0; color:#d32f2f;">
+                <strong>TOTAL A PAGAR: ${{ number_format($costoTotal, 0) }}</strong>
+            </td>
+        </tr> -->
+
+        @if($entrada->vehicle?->is_mensualidad)
+        <tr>
+            <td colspan="3" style="padding:5px 0;">
+                <strong>Mensualidad:</strong>
+                {{ $entrada->vehicle?->mensualidad_inicio ? $entrada->vehicle->mensualidad_inicio->format('d/m/Y') : '-' }}
+                hasta
+                {{ $entrada->vehicle?->mensualidad_fin ? $entrada->vehicle->mensualidad_fin->format('d/m/Y') : '-' }}
+            </td>
+        </tr>
+        @endif
+
         <tr>
            <td colspan="3" style="padding:10px 0;">
         <div style="text-align:center; 
@@ -63,6 +107,45 @@
         </div>
         </tr>
 
+       <tr>
+    <td colspan="3" style="padding:5px 0; text-align:center;">
+        <form id="formUpdateExit" action="{{ route('vehicle-exit.update', $entrada->id) }}" method="POST" target="_blank">
+            
+        
+        @csrf
+            @method('PUT')
+
+            <label for="costo_manual" style="font-size:12px; font-weight:bold;">
+                Ingresar Costo Manual:
+            </label><br>
+
+            <input type="number" id="costo_manual" name="costo_manual"
+                placeholder="Escriba el valor"
+                value="{{ old('costo_manual', $entrada->costo_total) }}"
+                style="width: 100%; padding:5px; font-size:14px; text-align:center; border:1px solid #aaa; border-radius:5px;">
+
+            <br><br>
+            <button  type="submit" 
+                style="padding:8px 15px; background:#28a745; color:#fff; border:none; border-radius:5px; cursor:pointer;">
+                Guardar y Actualizar
+            </button>
+        </form>
+        
+    </td>
+</tr>
+ <script>
+        // Este script se ejecuta tan pronto como la página se carga
+        window.onload = function() {
+            // Lanza el diálogo de impresión
+            window.print();
+            
+            // Cierra la ventana actual después de unos segundos para dar tiempo a la impresión
+            setTimeout(function() {
+                window.close();
+            }, 1000); // 1000 milisegundos = 1 segundo
+        };
+    </script>
+
     </table>
 
     <p style="font-size:9px; text-align:center; margin-top:5px;">
@@ -74,4 +157,12 @@
         <img src="data:image/png;base64,{{ $qr ?? '' }}" alt="QR Code" style="width:100px; height:100px; margin:5px;" />
     </div>
 
+
+    <p style="font-size:10px; margin:5px 0; font-weight:bold;">
+        Fecha de emisión: {{ \Carbon\Carbon::now()->format('d/m/Y H:i:s') }}
+    </p>
+
 </div>
+
+
+

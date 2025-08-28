@@ -3,6 +3,15 @@
 @section('content')
 <h2>Crear Tarifa</h2>
 
+@if($errors->any())
+<div class="alert alert-danger">
+    <ul>
+        @foreach($errors->all() as $error)
+        <li>{{ $error }}</li>
+        @endforeach
+    </ul>
+</div>
+@endif
 
 <form action="{{ route('tarifas.store') }}" method="POST">
     @csrf
@@ -31,22 +40,35 @@
         </select>
     </div>
 
+    {{-- Nuevos campos --}}
     <div class="mb-3">
-        <label for="precio_hora" class="form-label">Precio por Hora</label>
-        <input type="text"
-            name="precio_hora"
-            class="form-control"
-            value="{{ old('precio_hora') }}"
-            oninput="formatearMoneda(this)">
+        <label for="fraccion_hora" class="form-label">Fracción (Hora)</label>
+        <input type="text" name="fraccion_hora" class="form-control"
+            value="{{ old('fraccion_hora') }}" oninput="formatearMoneda(this)">
     </div>
 
     <div class="mb-3">
-        <label for="precio_dia" class="form-label">Precio por Día</label>
-        <input type="text"
-            name="precio_dia"
-            class="form-control"
-            value="{{ old('precio_dia') }}"
-            oninput="formatearMoneda(this)">
+        <label for="hora_adicional" class="form-label">Hora Adicional</label>
+        <input type="text" name="hora_adicional" class="form-control"
+            value="{{ old('hora_adicional') }}" oninput="formatearMoneda(this)">
+    </div>
+
+    <div class="mb-3">
+        <label for="media_jornada" class="form-label">Media Jornada</label>
+        <input type="text" name="media_jornada" class="form-control"
+            value="{{ old('media_jornada') }}" oninput="formatearMoneda(this)">
+    </div>
+
+    <div class="mb-3">
+        <label for="jornada_completa" class="form-label">Jornada Completa</label>
+        <input type="text" name="jornada_completa" class="form-control"
+            value="{{ old('jornada_completa') }}" oninput="formatearMoneda(this)">
+    </div>
+
+    <div class="mb-3">
+        <label for="mensualidad_diurna" class="form-label">Mensualidad Diurna</label>
+        <input type="text" name="mensualidad_diurna" class="form-control"
+            value="{{ old('mensualidad_diurna') }}" oninput="formatearMoneda(this)">
     </div>
 
     <button type="submit" class="btn btn-success">Guardar</button>
@@ -57,21 +79,17 @@
 <script>
     function formatearMoneda(input) {
 
-        let valor = input.value.replace(/\D/g, '');
+        let valor = input.value.replace(/[^0-9,]/g, '');
 
 
-        if (valor === '') {
-            input.value = '';
-            return;
-        }
+        let partes = valor.split(",");
+        let parteEntera = partes[0];
+        let parteDecimal = partes[1] !== undefined ? "," + partes[1].substring(0, 2) : "";
 
 
-        let opciones = {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        };
-        let valorFormateado = (parseInt(valor) / 100).toLocaleString('es-CO', opciones);
+        parteEntera = parteEntera.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
 
-        input.value = valorFormateado;
+
+        input.value = parteEntera + parteDecimal;
     }
 </script>

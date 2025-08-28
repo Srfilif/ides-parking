@@ -20,6 +20,7 @@ use App\Http\Controllers\TarifaController;
 use App\Http\Controllers\TicketController;
 
 
+
 // Rutas existentes...
 
 // Ruta para registrar salida con PDF
@@ -155,6 +156,14 @@ Route::get('/entries/{id}/salida', [VehicleEntryController::class, 'salida'])
 
     // Factura QR
     Route::get('/factura-html/{id}', [VehicleEntryController::class, 'invoiceHtml']);
+
+
+    //
+    // ruta actualizar costo manual
+    Route::put('/vehicle-exit/{id}', [VehicleEntryController::class, 'updateExit'])->name('vehicle-exit.update');
+
+
+
 
     Route::middleware(['auth'])->group(function () {
         Route::resource('tipo_vehiculos', TipoVehiculoWebController::class);

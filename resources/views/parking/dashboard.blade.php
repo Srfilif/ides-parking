@@ -177,9 +177,35 @@
                             </script>
                         </div>
                     </div>
+
+
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="is_mensualidad" name="is_mensualidad" value="1">
+                        <label class="form-check-label fw-bold" for="is_mensualidad">
+                            Vehículo bajo mensualidad
+                        </label>
+                    </div>
+
+                    <!-- Contenedor de fechas oculto al inicio -->
+                    <div id="mensualidadFechas" style="display: none;">
+                        <div class="mb-3">
+                            <label for="mensualidad_inicio" class="form-label">Inicio de mensualidad</label>
+                            <input type="date" class="form-control" id="mensualidad_inicio" name="mensualidad_inicio">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="mensualidad_fin" class="form-label">Fin de mensualidad</label>
+                            <input type="date" class="form-control" id="mensualidad_fin" name="mensualidad_fin">
+                        </div>
+                    </div>
+
+
                     <button type="submit" class="btn btn-success w-100">
                         <i class="fas fa-plus me-2"></i>Registrar Entrada
                     </button>
+
+
                 </form>
             </div>
         </div>
@@ -194,7 +220,7 @@
             <div class="card-header">
                 <h5 class="mb-0"><i class="fas fa-car me-2"></i>Vehículos Estacionados ({{ $activeEntries->count() }})</h5>
             </div>
-            
+
             <!-- Sección de Búsqueda -->
             <div class="card-body border-bottom">
                 <div class="row mb-3">
@@ -213,7 +239,7 @@
                         </button>
                     </div>
                 </div>
-                
+
                 <!-- Búsqueda Avanzada (Inicialmente oculta) -->
                 <div id="advancedSearchPanel" class="row" style="display: none;">
                     <div class="col-12">
@@ -283,7 +309,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="card-body">
                 @if($activeEntries->count() > 0)
                 <div class="table-responsive">
@@ -353,153 +379,171 @@
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('searchInput');
-    const searchBtn = document.getElementById('searchBtn');
-    const toggleAdvancedBtn = document.getElementById('toggleAdvancedSearch');
-    const advancedPanel = document.getElementById('advancedSearchPanel');
-    const applyFiltersBtn = document.getElementById('applyAdvancedFilters');
-    const clearFiltersBtn = document.getElementById('clearFilters');
-    const table = document.getElementById('vehiclesTable');
-    
-    // Toggle panel de búsqueda avanzada
-    toggleAdvancedBtn.addEventListener('click', function() {
-        if (advancedPanel.style.display === 'none') {
-            advancedPanel.style.display = 'block';
-            toggleAdvancedBtn.innerHTML = '<i class="fas fa-filter"></i> Ocultar Filtros';
-            toggleAdvancedBtn.classList.remove('btn-outline-secondary');
-            toggleAdvancedBtn.classList.add('btn-secondary');
-        } else {
-            advancedPanel.style.display = 'none';
-            toggleAdvancedBtn.innerHTML = '<i class="fas fa-filter"></i> Filtros Avanzados';
-            toggleAdvancedBtn.classList.remove('btn-secondary');
-            toggleAdvancedBtn.classList.add('btn-outline-secondary');
+    document.addEventListener("DOMContentLoaded", function() {
+        const checkMensualidad = document.getElementById("is_mensualidad");
+        const contenedorFechas = document.getElementById("mensualidadFechas");
+
+        function toggleFechas() {
+            contenedorFechas.style.display = checkMensualidad.checked ? "block" : "none";
         }
+
+        // Detectar cambio en el check
+        checkMensualidad.addEventListener("change", toggleFechas);
+
+        // Inicializar por si viene activado al cargar la vista
+        toggleFechas();
     });
-    
-    // Búsqueda simple
-    function performSimpleSearch() {
-        const searchTerm = searchInput.value.toLowerCase();
-        filterTable(searchTerm);
-    }
-    
-    // Búsqueda avanzada
-    function performAdvancedSearch() {
-        const filters = {
-            plate: document.getElementById('filterPlate').value.toLowerCase(),
-            type: document.getElementById('filterType').value.toLowerCase(),
-            brand: document.getElementById('filterBrand').value.toLowerCase(),
-            model: document.getElementById('filterModel').value.toLowerCase(),
-            color: document.getElementById('filterColor').value.toLowerCase(),
-            zone: document.getElementById('filterZone').value.toLowerCase(),
-            timeFrom: document.getElementById('filterTimeFrom').value,
-            timeUntil: document.getElementById('filterTimeUntil').value
-        };
-        
-        filterTableAdvanced(filters);
-    }
-    
-    // Función de filtrado simple
-    function filterTable(searchTerm) {
-        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-        
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            const cells = row.getElementsByTagName('td');
-            let found = false;
-            
-            // Buscar en todas las celdas
-            for (let j = 0; j < cells.length - 1; j++) { // -1 para excluir la columna de acciones
-                const cellText = cells[j].textContent || cells[j].innerText;
-                if (cellText.toLowerCase().includes(searchTerm)) {
-                    found = true;
-                    break;
+
+
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const toggleAdvancedBtn = document.getElementById('toggleAdvancedSearch');
+        const advancedPanel = document.getElementById('advancedSearchPanel');
+        const applyFiltersBtn = document.getElementById('applyAdvancedFilters');
+        const clearFiltersBtn = document.getElementById('clearFilters');
+        const table = document.getElementById('vehiclesTable');
+
+        // Toggle panel de búsqueda avanzada
+        toggleAdvancedBtn.addEventListener('click', function() {
+            if (advancedPanel.style.display === 'none') {
+                advancedPanel.style.display = 'block';
+                toggleAdvancedBtn.innerHTML = '<i class="fas fa-filter"></i> Ocultar Filtros';
+                toggleAdvancedBtn.classList.remove('btn-outline-secondary');
+                toggleAdvancedBtn.classList.add('btn-secondary');
+            } else {
+                advancedPanel.style.display = 'none';
+                toggleAdvancedBtn.innerHTML = '<i class="fas fa-filter"></i> Filtros Avanzados';
+                toggleAdvancedBtn.classList.remove('btn-secondary');
+                toggleAdvancedBtn.classList.add('btn-outline-secondary');
+            }
+        });
+
+        // Búsqueda simple
+        function performSimpleSearch() {
+            const searchTerm = searchInput.value.toLowerCase();
+            filterTable(searchTerm);
+        }
+
+        // Búsqueda avanzada
+        function performAdvancedSearch() {
+            const filters = {
+                plate: document.getElementById('filterPlate').value.toLowerCase(),
+                type: document.getElementById('filterType').value.toLowerCase(),
+                brand: document.getElementById('filterBrand').value.toLowerCase(),
+                model: document.getElementById('filterModel').value.toLowerCase(),
+                color: document.getElementById('filterColor').value.toLowerCase(),
+                zone: document.getElementById('filterZone').value.toLowerCase(),
+                timeFrom: document.getElementById('filterTimeFrom').value,
+                timeUntil: document.getElementById('filterTimeUntil').value
+            };
+
+            filterTableAdvanced(filters);
+        }
+
+        // Función de filtrado simple
+        function filterTable(searchTerm) {
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                let found = false;
+
+                // Buscar en todas las celdas
+                for (let j = 0; j < cells.length - 1; j++) { // -1 para excluir la columna de acciones
+                    const cellText = cells[j].textContent || cells[j].innerText;
+                    if (cellText.toLowerCase().includes(searchTerm)) {
+                        found = true;
+                        break;
+                    }
                 }
+
+                row.style.display = found || searchTerm === '' ? '' : 'none';
             }
-            
-            row.style.display = found || searchTerm === '' ? '' : 'none';
         }
-    }
-    
-    // Función de filtrado avanzado
-    function filterTableAdvanced(filters) {
-        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-        
-        for (let i = 0; i < rows.length; i++) {
-            const row = rows[i];
-            const cells = row.getElementsByTagName('td');
-            let show = true;
-            
-            // Filtrar por placa
-            if (filters.plate && !cells[0].textContent.toLowerCase().includes(filters.plate)) {
-                show = false;
+
+        // Función de filtrado avanzado
+        function filterTableAdvanced(filters) {
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+            for (let i = 0; i < rows.length; i++) {
+                const row = rows[i];
+                const cells = row.getElementsByTagName('td');
+                let show = true;
+
+                // Filtrar por placa
+                if (filters.plate && !cells[0].textContent.toLowerCase().includes(filters.plate)) {
+                    show = false;
+                }
+
+                // Filtrar por tipo
+                if (filters.type && !cells[1].textContent.toLowerCase().includes(filters.type)) {
+                    show = false;
+                }
+
+                // Filtrar por marca/modelo
+                if (filters.brand && !cells[2].textContent.toLowerCase().includes(filters.brand)) {
+                    show = false;
+                }
+
+                if (filters.model && !cells[2].textContent.toLowerCase().includes(filters.model)) {
+                    show = false;
+                }
+
+                // Filtrar por color
+                if (filters.color && !cells[3].textContent.toLowerCase().includes(filters.color)) {
+                    show = false;
+                }
+
+                // Filtrar por zona
+                if (filters.zone && !cells[4].textContent.toLowerCase().includes(filters.zone)) {
+                    show = false;
+                }
+
+                // Aquí puedes agregar lógica para filtrar por fechas si es necesario
+
+                row.style.display = show ? '' : 'none';
             }
-            
-            // Filtrar por tipo
-            if (filters.type && !cells[1].textContent.toLowerCase().includes(filters.type)) {
-                show = false;
-            }
-            
-            // Filtrar por marca/modelo
-            if (filters.brand && !cells[2].textContent.toLowerCase().includes(filters.brand)) {
-                show = false;
-            }
-            
-            if (filters.model && !cells[2].textContent.toLowerCase().includes(filters.model)) {
-                show = false;
-            }
-            
-            // Filtrar por color
-            if (filters.color && !cells[3].textContent.toLowerCase().includes(filters.color)) {
-                show = false;
-            }
-            
-            // Filtrar por zona
-            if (filters.zone && !cells[4].textContent.toLowerCase().includes(filters.zone)) {
-                show = false;
-            }
-            
-            // Aquí puedes agregar lógica para filtrar por fechas si es necesario
-            
-            row.style.display = show ? '' : 'none';
         }
-    }
-    
-    // Limpiar filtros
-    function clearAllFilters() {
-        searchInput.value = '';
-        document.getElementById('filterPlate').value = '';
-        document.getElementById('filterType').value = '';
-        document.getElementById('filterBrand').value = '';
-        document.getElementById('filterModel').value = '';
-        document.getElementById('filterColor').value = '';
-        document.getElementById('filterZone').value = '';
-        document.getElementById('filterTimeFrom').value = '';
-        document.getElementById('filterTimeUntil').value = '';
-        
-        // Mostrar todas las filas
-        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-        for (let i = 0; i < rows.length; i++) {
-            rows[i].style.display = '';
+
+        // Limpiar filtros
+        function clearAllFilters() {
+            searchInput.value = '';
+            document.getElementById('filterPlate').value = '';
+            document.getElementById('filterType').value = '';
+            document.getElementById('filterBrand').value = '';
+            document.getElementById('filterModel').value = '';
+            document.getElementById('filterColor').value = '';
+            document.getElementById('filterZone').value = '';
+            document.getElementById('filterTimeFrom').value = '';
+            document.getElementById('filterTimeUntil').value = '';
+
+            // Mostrar todas las filas
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            for (let i = 0; i < rows.length; i++) {
+                rows[i].style.display = '';
+            }
         }
-    }
-    
-    // Event listeners
-    searchBtn.addEventListener('click', performSimpleSearch);
-    searchInput.addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') {
-            performSimpleSearch();
-        }
+
+        // Event listeners
+        searchBtn.addEventListener('click', performSimpleSearch);
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSimpleSearch();
+            }
+        });
+        searchInput.addEventListener('input', function() {
+            if (this.value === '') {
+                clearAllFilters();
+            }
+        });
+
+        applyFiltersBtn.addEventListener('click', performAdvancedSearch);
+        clearFiltersBtn.addEventListener('click', clearAllFilters);
     });
-    searchInput.addEventListener('input', function() {
-        if (this.value === '') {
-            clearAllFilters();
-        }
-    });
-    
-    applyFiltersBtn.addEventListener('click', performAdvancedSearch);
-    clearFiltersBtn.addEventListener('click', clearAllFilters);
-});
 </script>
 <!-- Modal para la factura -->
 <div class="modal fade" id="invoiceModal" tabindex="-1" aria-hidden="true">
@@ -714,52 +758,57 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         $('#exitForm').on('submit', function(e) {
-            e.preventDefault();
+    e.preventDefault();
 
-            const submitBtn = $(this).find('button[type="submit"]');
-            const originalText = submitBtn.html();
+    const submitBtn = $(this).find('button[type="submit"]');
+    const originalText = submitBtn.html();
 
-            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Procesando...');
+    submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Procesando...');
 
-            $.ajax({
-                url: '{{ route("parking.exit") }}',
-                method: 'POST',
-                data: $(this).serialize(),
-                success: function(response) {
-                    if (response.success) {
-                        showAlert('success', response.message);
-                        $('#exitForm')[0].reset();
+    $.ajax({
+        url: '{{ route("parking.exit") }}',
+        method: 'POST',
+        data: $(this).serialize(),
+        success: function(response) {
+            if (response.success) {
+                showAlert('success', response.message);
+                $('#exitForm')[0].reset();
 
-                        if (response.data && response.data.duration_minutes) {
-                            const hours = Math.floor(response.data.duration_minutes / 60);
-                            const minutes = response.data.duration_minutes % 60;
-                            const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                if (response.data && response.data.duration_minutes) {
+                    const hours = Math.floor(response.data.duration_minutes / 60);
+                    const minutes = response.data.duration_minutes % 60;
+                    const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
 
-                            showAlert('info', `Tiempo estacionado: ${duration}`);
-                        }
-
-                        setTimeout(() => location.reload(), 2000);
-                    } else {
-                        showAlert('danger', response.message);
-                    }
-                },
-                error: function(xhr) {
-                    const response = xhr.responseJSON;
-                    let message = 'Error al registrar salida';
-
-                    if (response && response.message) {
-                        message = response.message;
-                    } else if (response && response.errors) {
-                        message = Object.values(response.errors).flat().join(', ');
-                    }
-
-                    showAlert('danger', message);
-                },
-                complete: function() {
-                    submitBtn.prop('disabled', false).html(originalText);
+                    showAlert('info', `Tiempo estacionado: ${duration}`);
                 }
-            });
-        });
+
+                // 👉 Abrir en nueva pestaña el recibo
+                if (response.data && response.data.ticket_id) {
+                    const receiptUrl = `{{ url('parking/receipt') }}/${response.data.ticket_id}`;
+                    window.open(receiptUrl, '_blank'); // abre en nueva pestaña
+                }
+            } else {
+                showAlert('danger', response.message);
+            }
+        },
+        error: function(xhr) {
+            const response = xhr.responseJSON;
+            let message = 'Error al registrar salida';
+
+            if (response && response.message) {
+                message = response.message;
+            } else if (response && response.errors) {
+                message = Object.values(response.errors).flat().join(', ');
+            }
+
+            showAlert('danger', message);
+        },
+        complete: function() {
+            submitBtn.prop('disabled', false).html(originalText);
+        }
+    });
+});
+
 
         function showAlert(type, message) {
             const alertHtml = `
@@ -809,6 +858,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 </script>
 <script>
+
 $(document).ready(function() {
     // Manejar salida desde el botón de la tabla con confirmación
     $(document).on('click', '.btn-exit-table', function() {
@@ -831,6 +881,7 @@ $(document).ready(function() {
             Swal.fire({
                 title: `¿Confirmar salida del vehículo?`,
                 html: `
+
                     <div style="text-align:center">
                         <img src="${plateImageUrl}" alt="Placa" style="max-width:300px; margin-bottom:10px;">
                         <p><strong>Placa:</strong> ${plate}</p>
@@ -839,88 +890,86 @@ $(document).ready(function() {
                         <p><strong>Tipo:</strong> ${vehicleType}</p>
                     </div>
                 `,
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Sí, sacar vehículo',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // Ejecutar salida si confirma
-                    $.ajax({
-                        url: '{{ route("parking.register-exit") }}',
-                        method: 'POST',
-                        data: {
-                            _token: '{{ csrf_token() }}',
-                            plate: plate
-                        },
-                        success: function(response) {
-                            if (response.success) {
-                                // Mostrar el ticket de salida en el mismo modal que la entrada
-                                if (response.data.ticket_html) {
-                                    $('#invoiceContent').html(response.data.ticket_html);
-                                    
-                                    // Cambiar el título del modal para indicar que es un ticket de salida
-                                    $('#invoiceModal .modal-title').text('Ticket de Salida');
-                                    
-                                    // Mostrar el modal
-                                    const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
-                                    modal.show();
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, sacar vehículo',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Ejecutar salida si confirma
+                        $.ajax({
+                            url: '{{ route("parking.register-exit") }}',
+                            method: 'POST',
+                            data: {
+                                _token: '{{ csrf_token() }}',
+                                plate: plate
+                            },
+                            success: function(response) {
+                                if (response.success) {
+    // Mostrar el ticket de salida en el mismo modal que la entrada
+    if (response.data.ticket_html) {
+        $('#invoiceContent').html(response.data.ticket_html);
 
-                                    // Mostrar alerta de éxito
-                                    showAlert('success', response.message);
+        // Cambiar el título del modal para indicar que es un ticket de salida
+        $('#invoiceModal .modal-title').text('Ticket de Salida');
 
-                                    // Recargar página cuando se cierre el modal
-                                    $('#invoiceModal').one('hidden.bs.modal', function() {
-                                        // Restaurar el título original del modal
-                                        $('#invoiceModal .modal-title').text('Factura de Entrada');
-                                        location.reload();
-                                    });
-                                } else {
-                                    // Si no hay ticket_html, mostrar resumen tradicional
-                                    showExitSummary(response.data);
-                                    showAlert('success', response.message);
-                                    setTimeout(() => location.reload(), 3000);
-                                }
-                            } else {
-                                showAlert('danger', response.message);
-                            }
-                        },
-                        error: function(xhr) {
-                            const response = xhr.responseJSON;
-                            let message = 'Error al registrar salida';
+        // Mostrar el modal
+        const modal = new bootstrap.Modal(document.getElementById('invoiceModal'));
+        modal.show();
 
-                            if (response && response.message) {
-                                message = response.message;
-                            } else if (response && response.errors) {
-                                message = Object.values(response.errors).flat().join(', ');
-                            }
+        // Mostrar alerta de éxito
+        showAlert('success', response.message);
 
-                            showAlert('danger', message);
-                        },
-                        complete: function() {
-                            button.prop('disabled', false).html(originalText);
-                        }
-                    });
-                } else {
-                    // Si cancela, restaurar botón
-                    button.prop('disabled', false).html(originalText);
-                }
-            });
-        }).fail(function() {
-            showAlert('danger', 'No se pudo obtener la información del vehículo.');
-            button.prop('disabled', false).html(originalText);
+        // Recargar página cuando se cierre el modal
+        $('#invoiceModal').one('hidden.bs.modal', function() {
+            $('#invoiceModal .modal-title').text('Factura de Entrada');
+            location.reload();
         });
-    });
+    } else {
+        // Si no hay ticket_html, mostrar resumen tradicional
+        showExitSummary(response.data);
+        showAlert('success', response.message);
+        setTimeout(() => location.reload(), 3000);
+    }
+}
 
-    // Función para mostrar resumen de salida con costo (mantener como fallback)
-    function showExitSummary(data) {
-        const hours = Math.floor(data.duration_minutes / 60);
-        const minutes = data.duration_minutes % 60;
-        const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+                            },
+                            error: function(xhr) {
+                                const response = xhr.responseJSON;
+                                let message = 'Error al registrar salida';
 
-        Swal.fire({
-            title: '¡Salida Registrada!',
-            html: `
+                                if (response && response.message) {
+                                    message = response.message;
+                                } else if (response && response.errors) {
+                                    message = Object.values(response.errors).flat().join(', ');
+                                }
+
+                                showAlert('danger', message);
+                            },
+                            complete: function() {
+                                button.prop('disabled', false).html(originalText);
+                            }
+                        });
+                    } else {
+                        // Si cancela, restaurar botón
+                        button.prop('disabled', false).html(originalText);
+                    }
+                });
+            }).fail(function() {
+                showAlert('danger', 'No se pudo obtener la información del vehículo.');
+                button.prop('disabled', false).html(originalText);
+            });
+        });
+
+        // Función para mostrar resumen de salida con costo (mantener como fallback)
+        function showExitSummary(data) {
+            const hours = Math.floor(data.duration_minutes / 60);
+            const minutes = data.duration_minutes % 60;
+            const duration = hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
+
+            Swal.fire({
+                title: '¡Salida Registrada!',
+                html: `
                 <div class="text-center">
                     <div class="mb-3">
                         <h4 class="text-success">Vehículo: ${data.vehicle.plate}</h4>
@@ -943,50 +992,50 @@ $(document).ready(function() {
                     </div>
                 </div>
             `,
-            icon: 'success',
-            confirmButtonText: 'Aceptar'
-        });
-    }
+                icon: 'success',
+                confirmButtonText: 'Aceptar'
+            });
+        }
 
-    // Función para formatear fecha y hora
-    function formatDateTime(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleString('es-CO', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-    }
+        // Función para formatear fecha y hora
+        function formatDateTime(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleString('es-CO', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
 
-    // Función para formatear moneda
-    function formatCurrency(amount) {
-        return new Intl.NumberFormat('es-CO').format(amount);
-    }
+        // Función para formatear moneda
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('es-CO').format(amount);
+        }
 
-    // Función para mostrar alertas bootstrap
-    function showAlert(type, message) {
-        const alertHtml = `
+        // Función para mostrar alertas bootstrap
+        function showAlert(type, message) {
+            const alertHtml = `
             <div class="alert alert-${type} alert-dismissible fade show" role="alert">
                 ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         `;
-        $('.container').prepend(alertHtml);
-        setTimeout(() => {
-            $('.alert').fadeOut();
-        }, 5000);
-    }
+            $('.container').prepend(alertHtml);
+            setTimeout(() => {
+                $('.alert').fadeOut();
+            }, 5000);
+        }
 
-    // Mejorar la función de impresión del modal
-    $('#btnPrint').off('click').on('click', function() {
-        const printContents = $('#invoiceContent').html();
-        
-        // Crear ventana de impresión optimizada
-        const printWindow = window.open('', '', 'width=800,height=600,scrollbars=yes,resizable=yes');
-        
-        printWindow.document.write(`
+        // Mejorar la función de impresión del modal
+        $('#btnPrint').off('click').on('click', function() {
+            const printContents = $('#invoiceContent').html();
+
+            // Crear ventana de impresión optimizada
+            const printWindow = window.open('', '', 'width=800,height=600,scrollbars=yes,resizable=yes');
+
+            printWindow.document.write(`
             <html>
             <head>
                 <title>Ticket - Impresión</title>
@@ -1016,17 +1065,17 @@ $(document).ready(function() {
             </body>
             </html>
         `);
-        
-        printWindow.document.close();
-        printWindow.focus();
-        
-        // Esperar a que cargue completamente antes de imprimir
-        setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 500);
+
+            printWindow.document.close();
+            printWindow.focus();
+
+            // Esperar a que cargue completamente antes de imprimir
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 500);
+        });
     });
-});
 </script>
 
 

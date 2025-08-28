@@ -39,6 +39,7 @@ class DatabaseSeeder extends Seeder
             // ParkingSpaceSeeder::class,
             ZonaSeeder::class,
             EspaciosParqueaderoSeeder::class,
+            
         ]);
 
     }

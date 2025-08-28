@@ -128,12 +128,14 @@
                     </table>
                 </div>
 
+
                 {{-- Paginación --}}
                 <div class="d-flex justify-content-center">
                     {{ $entries->links() }}
                 </div>
 
                 @else
+
                 <div class="text-center py-4">
                     <i class="fas fa-history fa-3x text-muted mb-3"></i>
                     <p class="text-muted">No hay registros en el historial</p>
@@ -143,7 +145,9 @@
 
         </div>
     </div>
+
 </div>
+
 
 <!-- Modal para la factura -->
 <div class="modal fade" id="invoiceModal" tabindex="-1" aria-hidden="true">
@@ -233,4 +237,5 @@ myWindow.close();
 </script>
 
 @endpush
+
 
