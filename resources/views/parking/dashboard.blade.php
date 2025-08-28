@@ -63,10 +63,10 @@
 
 <!-- Formularios de Entrada y Salida -->
 <div class="row mb-4">
-    <div class="col-md-6">
+    <div class="col-md-12">
         <div class="card parking-card">
             <div class="card-header bg-success text-white">
-                <h5 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Registrar Entrada</h5>
+                <h5 class="mb-0"><i class="fas fa-sign-in-alt me-2"></i>Registro De Entrada</h5>
             </div>
             <div class="card-body">
                 <form id="entryForm">
@@ -211,27 +211,6 @@
         </div>
     </div>
 
-    <div class="col-md-6">
-        <div class="card parking-card">
-            <div class="card-header bg-danger text-white">
-                <h5 class="mb-0"><i class="fas fa-sign-out-alt me-2"></i>Registrar Salida</h5>
-            </div>
-            <div class="card-body">
-                <form id="exitForm">
-                    @csrf
-                    <div class="mb-3">
-                        <label for="exit_plate" class="form-label">Placa del Vehículo</label>
-                        <input type="text" class="form-control plate-input" id="exit_plate" name="plate"
-                            placeholder="ABC123" pattern="[A-Z]{3}[0-9]{2}[0-9A-Z]" maxlength="6" required>
-                        <div class="form-text">Formato: ABC123 o ABC12D</div>
-                    </div>
-                    <button type="submit" class="btn btn-danger w-100">
-                        <i class="fas fa-sign-out-alt me-2"></i>Registrar Salida
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- Vehículos Actualmente Estacionados -->
@@ -344,7 +323,7 @@
                                 <th>Espacio</th>
                                 <th>Fecha/Hora de Entrada</th>
                                 <th>Tiempo Estacionado</th>
-                                <th>Factura</th>
+                                <th>Ticket</th>
                                 <th>Acciones</th>
                             </tr>
                         </thead>
@@ -375,15 +354,12 @@
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-primary btn-imprimir" data-entry-id="{{ $entry->id }}">
-                                        <i class="fas fa-receipt"></i> Recibo Entrada
+                                        <i class="fas fa-receipt"></i> Ticket De Entrada
                                     </button>
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-danger btn-exit-table" data-plate="{{ $entry->vehicle->plate }}">
                                         <i class="fas fa-sign-out-alt"></i> Salida
-                                    </button>
-                                    <button class="btn btn-sm btn-primary btn-imprimir" data-entry-id="{{ $entry->id }}">
-                                        <i class="fas fa-receipt"></i> Recibo
                                     </button>
                                 </td>
                             </tr>
@@ -882,28 +858,30 @@
     });
 </script>
 <script>
-    $(document).ready(function() {
-        // Manejar salida desde el botón de la tabla con confirmación
-        $(document).on('click', '.btn-exit-table', function() {
-            const plate = $(this).data('plate');
-            const button = $(this);
-            const originalText = button.html();
 
-            // Mostrar spinner mientras se obtiene la información del vehículo
-            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Procesando...');
+$(document).ready(function() {
+    // Manejar salida desde el botón de la tabla con confirmación
+    $(document).on('click', '.btn-exit-table', function() {
+        const plate = $(this).data('plate');
+        const button = $(this);
+        const originalText = button.html();
 
-            // Llamar a la API para obtener la imagen y datos del vehículo
-            $.get(`http://localhost:8000/api/vehicle/plate/generate?number=${plate}&region=bogotad`, function(data) {
-                console.log(data);
+        // Mostrar spinner mientras se obtiene la información del vehículo
+        button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>Procesando...');
 
-                const plateImageUrl = data.image || `http://localhost:8000/api/vehicle/plate/generate?number=${plate}&region=bogotad`;
-                const vehicleBrand = data.brand || 'Marca desconocida';
-                const vehicleModel = data.model || 'Modelo desconocido';
-                const vehicleType = data.type || 'Tipo desconocido';
+        // Llamar a la API para obtener la imagen y datos del vehículo
+        $.get(`http://localhost:8000/api/vehicle/data/${plate}`, function(data) {
+            console.log(data);
 
-                Swal.fire({
-                    title: `¿Confirmar salida del vehículo?`,
-                    html: `
+            const plateImageUrl = data.image || `http://localhost:8000/api/vehicle/plate/generate?number=${plate}`;
+            const vehicleBrand = data.brand || 'http://localhost:8000/api/vehicle/data?id=${plate}';
+            const vehicleModel = data.model || 'Modelo desconocido';
+            const vehicleType = data.type || 'Tipo desconocido';
+
+            Swal.fire({
+                title: `¿Confirmar salida del vehículo?`,
+                html: `
+
                     <div style="text-align:center">
                         <img src="${plateImageUrl}" alt="Placa" style="max-width:300px; margin-bottom:10px;">
                         <p><strong>Placa:</strong> ${plate}</p>

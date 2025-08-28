@@ -1,0 +1,103 @@
+<div style="font-family: monospace; width: 320px; border:1px solid #000; padding:10px; text-align:center;">
+
+    <!-- Logo centrado -->
+    <img src="data:image/png;base64,{{ $logoBase64 }}" alt="Logo Parqueadero" style="width:180px; height:auto; margin-bottom:15px;">
+
+    <!-- Información de la empresa -->
+    <p style="font-size:10px; margin:0;">Nit. 901075548</p>
+    <p style="font-size:10px; margin:0;">Calle 11 No 7-98</p>
+    <p style="font-size:10px; margin:0;">Horario de atención 7 AM a 7 PM</p>
+    <p style="font-size:10px; margin:0 0 10px 0;">Domingos y festivos no hay atención</p>
+
+    <hr style="border:1px dashed #000; margin:10px 0;">
+
+    <table style="width:100%; font-size:12px; border-collapse: collapse; text-align:center;">
+
+        <p style="font-size:15px; margin:5px 0;">
+            <strong>Recibo Nº:</strong>  <strong>{{ str_pad($entrada->id ?? 0, 4, '0', STR_PAD_LEFT) }}</strong>
+        </p>
+
+        {{-- Día, Mes, Año --}}
+        <tr>
+            <td><strong>Día:</strong> {{ $exitTime->format('d') }}</td>
+            <td><strong>Mes:</strong> {{ $exitTime->format('m') }}</td>
+            <td><strong>Año:</strong> {{ $exitTime->format('Y') }}</td>
+        </tr>
+
+        {{-- Placa --}}
+        <tr>
+            <td colspan="3">
+                <strong>No. Placa Vehículo:</strong> 
+                {{ $entrada->vehicle?->plate ? substr($entrada->vehicle->plate, 0, 3) . '-' . substr($entrada->vehicle->plate, 3) : 'N/A' }}
+            </td>
+        </tr>
+
+        {{-- Hora de salida --}}
+        <tr>
+            <td colspan="3"><strong>Hora De Salida:</strong> {{ $exitTime->format('g:i A') }}</td>
+        </tr>
+
+        @php
+    $totalMinutes = $durationMinutes ?? 0;
+    $days = $durationDays ?? 0;
+    // Si $displayHours y $displayMinutes vienen desde el controlador, úsalos.
+    // Si no, se calculan aquí a partir de $totalMinutes.
+    $hours = isset($displayHours) ? $displayHours : intdiv($totalMinutes, 60);
+    $minutes = isset($displayMinutes) ? $displayMinutes : ($totalMinutes % 60);
+@endphp
+
+        {{-- Tiempo total y costos --}}
+        <tr>
+           <td colspan="3" style="padding:5px 0;">
+    <strong>Tiempo Total:</strong>
+
+    @if($days > 0)
+        {{ $days }} día(s)
+        @if($hours > 0) {{ ' ' . $hours . ' hora(s)' }} @endif
+        @if($minutes > 0) {{ ' ' . $minutes . ' min' }} @endif
+
+    @elseif($hours > 0)
+        {{ $hours }} hora(s)
+        @if($minutes > 0) {{ ' ' . $minutes . ' min' }} @endif
+
+    @else
+        {{-- Aquí cubrimos el caso totalMinutes == 0 también --}}
+        {{ $minutes }} min
+    @endif
+</td>
+        </tr>
+        <tr>
+            <td colspan="3" style="padding:5px 0;">
+                <strong>{{ $tarifaAplicada }}</strong>
+            </td>
+        </tr>
+        <tr>
+          <tr>
+    <td colspan="3" style="padding:10px 0;">
+        <div style="text-align:center; 
+                    font-size:16px; 
+                    font-weight:bold; 
+                    color:#000; 
+                    border:1px dotted #999; 
+                    padding:8px; 
+                    display:inline-block;">
+           TOTAL A PAGAR: {{ number_format($costoTotal, 0) }} $
+        </div>
+    </td>
+</tr>
+
+
+        </tr>
+
+    </table>
+
+    <p style="font-size:9px; text-align:center; margin-top:5px;">
+        El vehículo ha sido entregado al portador de este recibo. No se aceptan reclamos posteriores por hurto, pérdida o daños causados por terceros o eventos fortuitos. Conserve este comprobante como constancia de salida.
+    </p>
+
+    {{-- QR Code --}}
+    <div style="margin-top:10px; margin-bottom:10px;">
+        <img src="data:image/png;base64,{{ $qr ?? '' }}" alt="QR Code" style="width:100px; height:100px; margin:5px;" />
+    </div>
+
+</div>

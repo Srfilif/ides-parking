@@ -22,31 +22,67 @@
 
         /* Lado izquierdo con imagen de fondo */
         .image-side {
-            flex: 1.2;
-            position: relative;
-            background: linear-gradient(135deg, rgba(13, 110, 253, 0.7), rgba(25, 135, 84, 0.7)),
-                        url('https://bogota.gov.co/sites/default/files/styles/1050px/public/2022-12/parque.jpg') center/cover no-repeat;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
+    flex: 1.2;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    text-align: center;
+    overflow: hidden;
 
-        .image-side::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: radial-gradient(circle at 30% 70%, rgba(13, 110, 253, 0.3), transparent 50%),
-                        radial-gradient(circle at 70% 30%, rgba(25, 135, 84, 0.3), transparent 50%);
-            animation: pulse 4s ease-in-out infinite alternate;
-        }
+    /* Imagen de fondo local */
+    background-image: url('{{ asset("images/parqueadero.jpeg") }}');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+
+       .image-side {
+    flex: 1.2;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: white;
+    overflow: hidden;
+
+    /* Imagen de fondo local */
+    background-image: url('{{ asset("images/parqueadero.jpeg") }}');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Overlay oscuro + gradientes animados */
+.image-side::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+        linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), /* overlay oscuro */
+        radial-gradient(circle at 30% 70%, rgba(13, 110, 253, 0.3), transparent 50%),
+        radial-gradient(circle at 70% 30%, rgba(25, 135, 84, 0.3), transparent 50%);
+    animation: pulse 4s ease-in-out infinite alternate;
+    z-index: 1;
+}
+
+/* Aseguramos que el contenido esté arriba */
+.brand-content, .floating-shapes {
+    position: relative;
+    z-index: 2;
+}
+
+/* Si quieres, podemos añadir un pequeño texto-shadow extra para las letras */
+.brand-content p,
+.brand-content h1 {
+    text-shadow: 2px 2px 8px rgba(0,0,0,0.7);
+}
+
 
         @keyframes pulse {
             0% { opacity: 0.5; }
@@ -104,20 +140,23 @@
 
         /* Lado derecho con formulario */
         .login-form {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            background-color: #ffffff;
-            position: relative;
-            overflow-y: auto;
-        }
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;  /* centrado vertical */
+    background-color: #ffffff;
+    position: relative;
+    overflow-y: auto;
+}
+
 
         .logo-container {
-            text-align: center;
-            padding: 30px 40px 20px;
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            border-bottom: 1px solid #dee2e6;
-        }
+    text-align: center;
+    padding: 0px 0px;  /* antes tenías 30px arriba, bajémoslo */
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-bottom: 1px solid #dee2e6;
+}
+
 
         .logo {
             display: flex;
@@ -373,34 +412,26 @@
 
 <body>
     <div class="login-container">
-        <!-- Lado izquierdo con imagen de fondo -->
-        <div class="image-side">
-            <div class="floating-shapes"></div>
-            <div class="brand-content">
-                <div class="parking-icon">
-                    <i class="fas fa-car"></i>
-                </div>
-                <h1>ParkingAdmin</h1>
-                <p>Sistema de Gestión Inteligente de Parqueaderos</p>
-                
-                <ul class="features-list">
-                    <li><i class="fas fa-check-circle"></i> Control de entradas y salidas</li>
-                    <li><i class="fas fa-chart-bar"></i> Reportes en tiempo real</li>
-                    <li><i class="fas fa-mobile-alt"></i> Gestión móvil avanzada</li>
-                    <li><i class="fas fa-shield-alt"></i> Seguridad garantizada</li>
-                </ul>
-            </div>
+    <!-- Lado izquierdo -->
+    <div class="image-side">
+        <div class="floating-shapes"></div>
+        <div class="brand-content">
+            <img src="{{ asset('images/logo.png') }}" alt="Logo Parqueadero" style="width:400px; height:auto; margin-bottom:15px;">
+            <p>Sistema de Gestión Inteligente de Parqueaderos</p>
         </div>
 
+        <!-- Lista de características dentro del lado izquierdo -->
+        <ul class="features-list">
+            <li><i class="fas fa-check-circle"></i> Control de entradas y salidas</li>
+            <li><i class="fas fa-chart-bar"></i> Reportes en tiempo real</li>
+            <li><i class="fas fa-shield-alt"></i> Seguridad garantizada</li>
+        </ul>
+    </div>
         <!-- Lado derecho con formulario -->
         <div class="login-form">
             <!-- Logo horizontal -->
             <div class="logo-container">
                 <div class="logo">
-                    <!-- Logo PNG principal -->
-                    <img src="https://png.pngtree.com/element_pic/00/16/09/2057e0eecf792fb.jpg" alt="ParkingAdmin Logo" class="logo-image" 
-                         onerror="this.style.display='none'; document.querySelector('.logo-fallback').style.display='flex';">
-                    
                     <!-- Fallback si no se encuentra la imagen -->
                     <div class="logo-fallback">
                         <div class="logo-icon">

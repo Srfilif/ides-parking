@@ -17,6 +17,7 @@ use App\Http\Controllers\ZonaController;
 use App\Http\Controllers\EspacioParqueaderoController;
 use App\Http\Controllers\CompatibilidadController;
 use App\Http\Controllers\TarifaController;
+use App\Http\Controllers\TicketController;
 
 
 
@@ -37,7 +38,7 @@ Route::get('/parking/exit-receipt/{id}', [VehicleEntryController::class, 'showEx
 use App\Http\Controllers\MarcaController;
 
 Route::get('/api/vehicle/plate/generate', [VehicleController::class, 'generatePlate']);
-
+Route::get('/api/vehicle/data/{id}', [VehicleController::class, 'datavehicle']);
 // ... otras rutas
 Route::resource('marcas', MarcaController::class);
 Route::post('/notificaciones/leidas', function () {
@@ -124,8 +125,16 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/entrada', [VehicleEntryController::class, 'registerEntry'])->name('entry');
         Route::post('/salida', [VehicleEntryController::class, 'registerExit'])->name('exit');
         Route::get('/spaces', [VehicleEntryController::class, 'estadoEspacios'])->name('spaces');
+        Route::get('/entrada/{id}/recibo', [VehicleEntryController::class, 'printReceipt'])
+            ->name('recibo');
     });
 
+Route::get('/entries/{id}/entrada', [VehicleEntryController::class, 'entrada'])
+    ->name('entries.entrada');
+
+Route::get('/entries/{id}/salida', [VehicleEntryController::class, 'salida'])
+    ->name('entries.salida');
+    
     // Rutas para entradas de zonas
     Route::resource('zonas', ZonaController::class);
 
@@ -148,9 +157,11 @@ Route::middleware(['auth'])->group(function () {
     // Factura QR
     Route::get('/factura-html/{id}', [VehicleEntryController::class, 'invoiceHtml']);
 
+
     //
     // ruta actualizar costo manual
     Route::put('/vehicle-exit/{id}', [VehicleEntryController::class, 'updateExit'])->name('vehicle-exit.update');
+
 
 
 

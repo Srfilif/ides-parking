@@ -82,7 +82,6 @@ class VehicleController extends Controller
     public function generatePlate(Request $request)
     {
         $number = strtoupper($request->query('number', 'AAA000'));
-        $region = strtoupper($request->query('region', 'BOGOTA'));
 
         $templatePath = public_path('images/gCOL1.png');
 
@@ -103,17 +102,25 @@ class VehicleController extends Controller
             $font->valign('middle');
         });
 
-        // Añadir ciudad
-        $img->text($region, $img->width() / 2, $img->height() * 0.85, function ($font) {
-            $font->filename(public_path('fonts/arialbd.ttf'));
-            $font->size(30);
-            $font->color('#000000');
-            $font->align('center');
-            $font->valign('middle');
-        });
-
         // Retornar como PNG
         return response($img->toPng())
             ->header('Content-Type', 'image/png');
+    }
+    function datavehicle($id)
+    {
+        $vehicle = Vehicle::with('tipoVehiculo')->where('plate',$id)->first();
+
+        if (!$vehicle) {
+            return response()->json(['error' => 'Vehículo no encontrado'], 404);
+        }
+
+        return response()->json([
+            'id' => $vehicle->id,
+            'plate' => $vehicle->plate,
+            'brand' => $vehicle->marca->nombre ?? null,
+            'model' => $vehicle->model,
+            'color' => $vehicle->color,
+            'type' => $vehicle->tipoVehiculo->nombre ?? null,
+        ]);
     }
 }

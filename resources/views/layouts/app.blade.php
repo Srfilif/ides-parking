@@ -333,7 +333,7 @@
                                     <li><a href="{{ route('admin.usuarios.index') ?? '#' }}">Usuarios</a></li>
                                 </ul>
                             </li>
-                            <li>
+                           {{--<li>
                                 <a><i class="fa fa-edit"></i> Gestión Documentos</span></a>
                                 <ul class="nav child_menu">
                                     <li><a href="{{ route('documentos.index') ?? '#' }}">Documentos</a></li>
@@ -341,7 +341,7 @@
                                     <li><a href="{{ route('categorias.index') ?? '#' }}">Categorías</a></li>
                                     <li><a href="{{ route('tipo_documentos.index') ?? '#' }}">Tipo De Documentos</a></li>
                                 </ul>
-                            </li>
+                            </li>--}} 
                             <li>
                                 <a><i class="fa fa-car"></i> Gestión Parqueadero </a>
                                 <ul class="nav child_menu">
@@ -517,6 +517,7 @@
         });
     </script>
     @yield('scripts')
+    @stack('scripts')
 </body>
 
 </html>
